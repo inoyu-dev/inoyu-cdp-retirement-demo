@@ -2,7 +2,8 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
-import { Loader2, LockKeyhole, ShieldCheck } from "lucide-react";
+import { Loader2, LockKeyhole } from "lucide-react";
+import InoyuLogo from "@/components/InoyuLogo";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -54,9 +55,7 @@ function LoginForm() {
       <Card className="glass-card w-full max-w-md border-0 shadow-xl">
         <div className="h-1.5 bg-gradient-to-r from-primary via-chart-2 to-chart-3" />
         <CardHeader className="space-y-3 text-center">
-          <span className="mx-auto flex size-12 items-center justify-center rounded-2xl bg-primary text-primary-foreground">
-            <ShieldCheck className="size-6" aria-hidden />
-          </span>
+          <InoyuLogo variant="mark" height={40} maxWidth={40} priority className="mx-auto" />
           <CardTitle className="font-heading text-2xl">Demo access</CardTitle>
           <CardDescription>
             Sign in to the Inoyu CDP Retirement Demo — shared password required for the quiz and marketing dashboard.

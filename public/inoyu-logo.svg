@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="155.09915mm"
+   height="54.465237mm"
+   viewBox="0 0 155.09915 54.465237"
+   version="1.1"
+   id="svg1"
+   sodipodi:docname="inoyu-logo-20250421-default.svg"
+   inkscape:version="1.4 (e7c3feb1, 2024-10-09)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:xlink="http://www.w3.org/1999/xlink"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview1"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:document-units="mm"
+     inkscape:zoom="1"
+     inkscape:cx="241"
+     inkscape:cy="108"
+     inkscape:window-width="1512"
+     inkscape:window-height="741"
+     inkscape:window-x="0"
+     inkscape:window-y="38"
+     inkscape:window-maximized="0"
+     inkscape:current-layer="svg1"
+     inkscape:export-bgcolor="#ffffff00" />
+  <defs
+     id="defs1">
+    <!-- Embedded Font -->
+    <style type="text/css">
+      @font-face {
+        font-family: 'InoyuFont';
+        src: url('data:font/woff2;base64,') format('woff2'),
+             url('data:font/woff;base64,') format('woff'),
+             url('data:font/ttf;base64,') format('truetype');
+        font-weight: normal;
+        font-style: normal;
+      }
+    </style>
+    
+    <linearGradient
+       id="linearGradient39">
+      <stop
+         style="stop-color:#338cf5;stop-opacity:1;"
+         offset="0"
+         id="stop39" />
+      <stop
+         style="stop-color:#4fd1c5;stop-opacity:1;"
+         offset="1"
+         id="stop40" />
+    </linearGradient>
+    <linearGradient
+       xlink:href="#linearGradient39"
+       id="linearGradient40"
+       x1="85.706703"
+       y1="20.470375"
+       x2="131.92569"
+       y2="20.470375"
+       gradientUnits="userSpaceOnUse"
+       gradientTransform="matrix(1.0471042,0,0,1.0471042,-60.061323,88.638542)" />
+    <linearGradient
+       xlink:href="#linearGradient39"
+       id="linearGradient40-9"
+       x1="85.706703"
+       y1="20.470375"
+       x2="131.92569"
+       y2="20.470375"
+       gradientUnits="userSpaceOnUse"
+       gradientTransform="matrix(1.0471042,0,0,1.0471042,-59.805518,153.8254)" />
+  </defs>
+  <g
+     id="g1"
+     transform="translate(-29.682404,-82.840477)">
+    <text
+       xml:space="preserve"
+       style="font-size:41.271px;line-height:1.25;font-family:sans-serif;stroke-width:0.214954"
+       x="83.176094"
+       y="125.55824"
+       id="text1-8"
+       transform="scale(1.0211913,0.97924845)"><tspan
+         id="tspan1-3"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:41.271px;font-family:'InoyuFont', 'Surgena Personal use only', sans-serif;fill:#152a4c;fill-opacity:1;stroke-width:0.214954"
+         x="83.176094"
+         y="125.55824">Inoyu</tspan></text>
+    <path
+       id="path35"
+       style="opacity:0.944606;fill:url(#linearGradient40);fill-opacity:1;fill-rule:nonzero;stroke-width:0.748025;stroke-linecap:round;stroke-linejoin:round"
+       d="m 53.084589,82.910025 a 4.5827176,4.5827176 0 0 0 -1.495516,0.54467 l -19.615337,11.32489 a 4.5827176,4.5827176 0 0 0 -2.291332,3.96875 v 22.649785 a 4.5827176,4.5827176 0 0 0 2.291332,3.96875 l 3.270602,1.88825 c 0.191626,-1.83463 0.621951,-3.57088 1.299663,-5.20536 0.944882,-2.27884 2.251184,-4.22396 3.918624,-5.83582 1.66744,-1.66744 3.6407,-2.94613 5.919534,-3.83543 2.278834,-0.94488 4.779937,-1.41748 7.503423,-1.41748 2.723476,0 5.224579,0.4726 7.503413,1.41748 2.278834,0.8893 4.252091,2.16799 5.919531,3.83543 1.66744,1.61186 2.945609,3.55698 3.834915,5.83582 0.682638,1.64636 1.115364,3.39572 1.304828,5.24515 l 3.338817,-1.92804 a 4.5827176,4.5827176 0 0 0 2.291326,-3.96875 V 98.748335 a 4.5827176,4.5827176 0 0 0 -2.291326,-3.96875 l -19.61534,-11.32489 a 4.5827176,4.5827176 0 0 0 -3.087157,-0.54467 z m 0.784973,9.027356 a 7.541717,7.541717 0 0 1 7.541652,7.541659 7.541717,7.541717 0 0 1 -7.541652,7.54166 7.541717,7.541717 0 0 1 -7.541664,-7.54166 7.541717,7.541717 0 0 1 7.541664,-7.541659 z m 0.01602,28.194659 c -2.890238,0 -5.224589,0.86184 -7.00319,2.58486 -1.723031,1.66744 -2.584343,3.91843 -2.584343,6.75307 v 3.01222 l 7.291024,4.20957 a 4.5827176,4.5827176 0 0 0 4.582673,0 l 7.21816,-4.16719 v -3.0546 c 0,-2.83464 -0.861316,-5.08563 -2.584337,-6.75307 -1.72302,-1.72302 -4.029759,-2.58486 -6.919987,-2.58486 z" />
+  </g>
+</svg>

@@ -3,8 +3,9 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { BarChart3, ListOrdered, Menu, ShieldCheck, X } from "lucide-react";
+import { BarChart3, ListOrdered, Menu, X } from "lucide-react";
 import DemoSessionBar from "@/components/DemoSessionBar";
+import InoyuLogo from "@/components/InoyuLogo";
 import LanguageSelector from "@/components/LanguageSelector";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -58,10 +59,8 @@ export function SiteHeader() {
   return (
     <header className="sticky top-0 z-50 border-b border-border/60 bg-background/80 backdrop-blur-xl">
       <div className="relative mx-auto flex h-16 max-w-6xl items-center justify-between gap-3 px-4 sm:px-6">
-        <Link href="/" className="group flex min-w-0 items-center gap-2.5 no-underline hover:no-underline">
-          <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
-            <ShieldCheck className="size-5" aria-hidden />
-          </span>
+        <Link href="/" className="group flex min-w-0 max-w-[min(100%,16rem)] items-center gap-2 no-underline hover:no-underline sm:max-w-none sm:gap-2.5">
+          <InoyuLogo variant="mark" height={32} maxWidth={32} priority />
           <span className="flex min-w-0 flex-col leading-tight">
             <span className="truncate font-heading text-sm font-semibold tracking-tight text-foreground sm:text-base">
               Your Retirement Guide
@@ -119,26 +118,29 @@ export function SiteFooter() {
         <p className="mt-1 text-xs text-muted-foreground/80">
           Text STOP anytime to opt out of messages.
         </p>
-        <p className="mt-4 text-xs text-muted-foreground/90">
-          Built by{" "}
-          <a
-            href="https://inoyu.dev"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="font-medium text-foreground/80 underline-offset-4 hover:text-foreground hover:underline"
-          >
-            Inoyu.dev
-          </a>
-          , powered by{" "}
-          <a
-            href="https://unomi.apache.org"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="font-medium text-foreground/80 underline-offset-4 hover:text-foreground hover:underline"
-          >
-            Apache Unomi
-          </a>
-        </p>
+        <div className="mt-4 flex flex-col items-center gap-2 text-xs text-muted-foreground/90">
+          <InoyuLogo variant="full" height={18} maxWidth={96} className="opacity-90" />
+          <p>
+            Built by{" "}
+            <a
+              href="https://inoyu.dev"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-medium text-foreground/80 underline-offset-4 hover:text-foreground hover:underline"
+            >
+              Inoyu.dev
+            </a>
+            , powered by{" "}
+            <a
+              href="https://unomi.apache.org"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-medium text-foreground/80 underline-offset-4 hover:text-foreground hover:underline"
+            >
+              Apache Unomi
+            </a>
+          </p>
+        </div>
       </div>
     </footer>
   );

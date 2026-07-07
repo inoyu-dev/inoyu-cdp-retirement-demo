@@ -22,6 +22,10 @@ const fraunces = Fraunces({
 });
 
 export const metadata: Metadata = {
+  icons: {
+    icon: "/inoyu-mark.svg",
+    apple: "/inoyu-mark.svg",
+  },
   title: "Free Retirement Score | Inoyu CDP Retirement Demo",
   description:
     "Inoyu CDP retirement demo — Apache Unomi, AI briefs, and omnichannel follow-up on a FinPub quiz scenario.",

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 import { Activity, Menu, Radio, X } from "lucide-react";
+import InoyuLogo from "@/components/InoyuLogo";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import CdpMockNotice from "@/components/dashboard/CdpMockNotice";
@@ -78,10 +79,13 @@ export default function DashboardShell({ children }: { children: ReactNode }) {
         <header className="relative space-y-4">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0 space-y-2">
-              <Badge variant="secondary" className="rounded-full px-3 py-1">
-                <Activity className="mr-1.5 size-3.5" aria-hidden />
-                Marketing dashboard
-              </Badge>
+              <div className="flex flex-wrap items-center gap-3">
+                <InoyuLogo variant="mark" height={24} maxWidth={24} className="hidden sm:block" />
+                <Badge variant="secondary" className="rounded-full px-3 py-1">
+                  <Activity className="mr-1.5 size-3.5" aria-hidden />
+                  Marketing dashboard
+                </Badge>
+              </div>
               <div className="hidden sm:block">
                 <IntegrationStatusBar />
               </div>
