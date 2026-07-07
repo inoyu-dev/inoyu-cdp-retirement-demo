@@ -2,9 +2,10 @@
 
 import { usePathname } from "next/navigation";
 import { useEffect, useRef } from "react";
+import { DEMO_BROWSER_SESSION_KEY } from "@/lib/app-identity";
 
 const FLUSH_INTERVAL_MS = 10_000;
-const SESSION_KEY = "itstoday_demo_browser_session";
+const SESSION_KEY = DEMO_BROWSER_SESSION_KEY;
 
 function getBrowserSessionId(): string {
   if (typeof window === "undefined") return "";

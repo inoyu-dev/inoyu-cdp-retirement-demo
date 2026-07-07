@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useIntegrationsHealth } from "@/hooks/useIntegrationsHealth";
 import {
   ArrowRight,
   Check,
@@ -9,6 +10,7 @@ import {
   Sparkles,
   X,
 } from "lucide-react";
+import AiGenerateButton from "@/components/AiGenerateButton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -36,6 +38,8 @@ type VariantPayload = {
 };
 
 export default function QuizVariantPanel() {
+  const { health } = useIntegrationsHealth();
+  const aiAvailable = health?.openai.ok ?? false;
   const [payload, setPayload] = useState<VariantPayload | null>(null);
   const [loading, setLoading] = useState(true);
   const [proposing, setProposing] = useState(false);
@@ -55,10 +59,14 @@ export default function QuizVariantPanel() {
     return () => clearInterval(id);
   }, [refresh]);
 
-  const propose = async () => {
+  const propose = async (useAi = false) => {
     setProposing(true);
     setMessage(null);
-    const res = await fetch("/api/quiz-variants/propose", { method: "POST" });
+    const res = await fetch("/api/quiz-variants/propose", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ useAi }),
+    });
     setProposing(false);
     if (!res.ok) {
       const err = (await res.json()) as { error?: string };
@@ -115,20 +123,29 @@ export default function QuizVariantPanel() {
             AI proposes a reorganized quiz from funnel friction — you approve before traffic is split.
           </p>
         </div>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          disabled={proposing || Boolean(proposal)}
-          onClick={() => void propose()}
-        >
-          {proposing ? (
-            <Loader2 className="size-4 animate-spin" aria-hidden />
-          ) : (
-            <Sparkles className="size-4" aria-hidden />
-          )}
-          Propose variant from AI
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={proposing || Boolean(proposal)}
+            onClick={() => void propose(false)}
+          >
+            {proposing ? (
+              <Loader2 className="size-4 animate-spin" aria-hidden />
+            ) : (
+              <FlaskConical className="size-4" aria-hidden />
+            )}
+            Generate template proposal
+          </Button>
+          <AiGenerateButton
+            aiAvailable={aiAvailable}
+            source={null}
+            generating={proposing}
+            onGenerate={() => void propose(true)}
+            label="Propose variant with AI"
+          />
+        </div>
       </div>
 
       {message ? (

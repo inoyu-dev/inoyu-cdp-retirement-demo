@@ -22,9 +22,9 @@ const fraunces = Fraunces({
 });
 
 export const metadata: Metadata = {
-  title: "Free Retirement Score | Your Retirement Guide",
+  title: "Free Retirement Score | Inoyu CDP Retirement Demo",
   description:
-    "A simple, free retirement readiness check for people planning to retire in the next few years.",
+    "Inoyu CDP retirement demo — Apache Unomi, AI briefs, and omnichannel follow-up on a FinPub quiz scenario.",
 };
 
 export default function RootLayout({

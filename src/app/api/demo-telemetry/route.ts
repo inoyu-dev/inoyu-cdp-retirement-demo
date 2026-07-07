@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { apiErrorResponse } from "@/lib/api-errors";
 import { recordDemoTelemetry } from "@/lib/demo-analytics-store";
 import { getDemoSessionFromRequest } from "@/lib/demo-request";
 
@@ -29,7 +30,7 @@ export async function POST(request: Request) {
 
     await recordDemoTelemetry(session, eventType, body.properties ?? {});
     return NextResponse.json({ ok: true });
-  } catch {
-    return NextResponse.json({ error: "Telemetry failed" }, { status: 500 });
+  } catch (error) {
+    return apiErrorResponse("demo-telemetry", "Telemetry failed", error);
   }
 }

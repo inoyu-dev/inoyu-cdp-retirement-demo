@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { apiErrorResponse } from "@/lib/api-errors";
 import type { TrafficSource } from "@/lib/types";
 import {
   getCountryCodeFromRequest,
@@ -7,6 +8,7 @@ import {
 import { isAppLocale } from "@/lib/i18n";
 import { getDemoSessionFromRequest } from "@/lib/demo-request";
 import { initContext } from "@/lib/unomi-client";
+import { jsonWithVisitorContext, resolveVisitorContextIds } from "@/lib/visitor-context";
 
 function parseTrafficSource(utm?: string): TrafficSource {
   if (!utm) return "direct";
@@ -28,8 +30,8 @@ export async function POST(request: Request) {
       preferredLanguage?: string;
     };
 
-    const sessionId = body.sessionId?.trim();
-    if (!sessionId) {
+    const ctx = await resolveVisitorContextIds({ sessionId: body.sessionId });
+    if (!ctx.sessionId) {
       return NextResponse.json({ error: "sessionId is required" }, { status: 400 });
     }
 
@@ -42,7 +44,7 @@ export async function POST(request: Request) {
         : undefined;
     const demoSession = await getDemoSessionFromRequest();
     const result = await initContext(
-      sessionId,
+      ctx.sessionId,
       trafficSource,
       body.utm_campaign,
       {
@@ -55,8 +57,12 @@ export async function POST(request: Request) {
         : undefined,
     );
 
-    return NextResponse.json(result);
-  } catch {
-    return NextResponse.json({ error: "Failed to initialize context" }, { status: 500 });
+    return jsonWithVisitorContext(result, result.profile ?? {
+      profileId: result.profileId,
+      sessionId: result.sessionId,
+      unomiProfileId: result.unomiProfileId,
+    });
+  } catch (error) {
+    return apiErrorResponse("context", "Failed to initialize context", error);
   }
 }

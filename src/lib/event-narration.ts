@@ -204,9 +204,40 @@ export function describeEventForMarketer(event: UnomiEvent): MarketerEventView {
     case "quizChatMessage": {
       const step = typeof props.step === "number" ? props.step : null;
       const mode = props.mode === "human" ? "human chat" : "AI chat";
+      const role = typeof props.role === "string" ? props.role : "visitor";
+      const preview = typeof props.bodyPreview === "string" ? truncate(props.bodyPreview) : null;
+      const roleLabel =
+        role === "visitor"
+          ? "Visitor message"
+          : role === "ai"
+            ? "AI reply"
+            : role === "human"
+              ? "Human advisor reply"
+              : "Quiz chat message";
       return {
-        headline: "Sent a message in quiz chat",
-        detail: step ? `${mode} · step ${step}` : mode,
+        headline: roleLabel,
+        detail: [step ? `${mode} · step ${step}` : mode, preview ? `“${preview}”` : null]
+          .filter(Boolean)
+          .join(" · "),
+      };
+    }
+    case "smsChatMessage": {
+      const role = props.role === "agent" ? "Agent" : "Lead";
+      const preview = typeof props.bodyPreview === "string" ? truncate(props.bodyPreview) : null;
+      return {
+        headline: `${role} SMS message`,
+        detail: preview ? `“${preview}”` : undefined,
+      };
+    }
+    case "dashboardAgentMessage": {
+      const role = props.role === "user" ? "Marketer question" : "CDP agent reply";
+      const preview = typeof props.bodyPreview === "string" ? truncate(props.bodyPreview) : null;
+      const tools = Array.isArray(props.toolsUsed) ? props.toolsUsed.join(", ") : null;
+      return {
+        headline: role,
+        detail: [preview ? `“${preview}”` : null, tools ? `Tools: ${tools}` : null]
+          .filter(Boolean)
+          .join(" · "),
       };
     }
         case "quizCompleted": {

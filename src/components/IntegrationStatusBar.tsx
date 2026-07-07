@@ -4,6 +4,7 @@ import { Cloud, CloudOff, Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useIntegrationsHealth } from "@/hooks/useIntegrationsHealth";
 import { cn } from "@/lib/utils";
+import { showcaseModeLabel } from "@/lib/integrations-health";
 
 export default function IntegrationStatusBar() {
   const { health, loading } = useIntegrationsHealth();
@@ -22,12 +23,7 @@ export default function IntegrationStatusBar() {
   const { showcaseMode, cdpMode } = health;
   const showcaseLive = showcaseMode === "full-live" || showcaseMode === "demo-live";
 
-  const showcaseLabel =
-    showcaseMode === "full-live"
-      ? "Live showcase"
-      : showcaseMode === "demo-live"
-        ? "Contest demo"
-        : "Local fallback";
+  const showcaseLabel = showcaseModeLabel(showcaseMode);
 
   const unomiLabel =
     cdpMode === "unomi-live"

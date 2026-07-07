@@ -23,6 +23,7 @@ type ChatEntry = {
 
 type Props = {
   profileId: string | null;
+  sessionId?: string;
   profileName?: string;
 };
 
@@ -33,7 +34,7 @@ const STARTERS = [
   "Which segments are most common?",
 ];
 
-export default function DashboardAgentChat({ profileId, profileName }: Props) {
+export default function DashboardAgentChat({ profileId, sessionId, profileName }: Props) {
   const [entries, setEntries] = useState<ChatEntry[]>([
     {
       id: "welcome",
@@ -69,7 +70,7 @@ export default function DashboardAgentChat({ profileId, profileName }: Props) {
       const res = await fetch("/api/dashboard-agent", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message, profileId: profileId ?? undefined, history }),
+        body: JSON.stringify({ message, profileId: profileId ?? undefined, sessionId, history }),
       });
 
       if (!res.ok) {

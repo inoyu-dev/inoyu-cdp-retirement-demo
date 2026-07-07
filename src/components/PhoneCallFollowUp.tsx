@@ -1,15 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { ArrowLeft, CalendarClock, CheckCircle2, Phone } from "lucide-react";
+import AiGenerateButton from "@/components/AiGenerateButton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { CONTACT_CHANNEL_LABELS } from "@/lib/contact-channels";
-import type { AiSummary, VisitorProfile } from "@/lib/types";
+import { useProfileSummaryById } from "@/hooks/useProfileSummary";
+import type { VisitorProfile } from "@/lib/types";
 
-type Props = { profileId: string; profile: VisitorProfile };
+type Props = { profileId: string; profile: VisitorProfile; sessionId: string };
 
 const TIME_SLOTS = [
   "Today, 2:00–4:00 PM",
@@ -17,28 +19,14 @@ const TIME_SLOTS = [
   "Tomorrow, 4:00–6:00 PM",
 ];
 
-export default function PhoneCallFollowUp({ profileId, profile }: Props) {
-  const [summary, setSummary] = useState<AiSummary | null>(null);
+export default function PhoneCallFollowUp({ profileId, profile, sessionId }: Props) {
+  const { summary, generating, aiAvailable, source, generateWithAi } =
+    useProfileSummaryById(profileId, "", sessionId);
   const [selectedSlot, setSelectedSlot] = useState(TIME_SLOTS[1]);
 
   const firstName = profile.quiz?.firstName ?? "there";
   const phone = profile.quiz?.phone ?? "your number on file";
   const score = profile.quiz?.score;
-
-  useEffect(() => {
-    let cancelled = false;
-    void (async () => {
-      const res = await fetch(`/api/summary?profileId=${encodeURIComponent(profileId)}`, {
-        cache: "no-store",
-      });
-      if (!res.ok || cancelled) return;
-      const data = (await res.json()) as { summary: AiSummary };
-      if (!cancelled) setSummary(data.summary);
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [profileId]);
 
   return (
     <div className="mesh-hero min-h-[calc(100vh-8rem)]">
@@ -53,6 +41,14 @@ export default function PhoneCallFollowUp({ profileId, profile }: Props) {
             You chose a phone call — the most trusted channel for many US retirement leads. We will
             call <span className="font-medium text-foreground">{phone}</span>.
           </p>
+          <AiGenerateButton
+            aiAvailable={aiAvailable}
+            source={source}
+            generating={generating}
+            onGenerate={() => void generateWithAi()}
+            label="Personalize callback prep with AI"
+            className="justify-center"
+          />
         </div>
 
         <Card className="glass-card border-0">

@@ -132,10 +132,6 @@ export interface QuizCopy {
     step3: [string, string, string];
     step4: [string, string, string];
   };
-  stepCoach: {
-    personalizedLabel: string;
-    loading: string;
-  };
   stepHelp: {
     prompt: string;
     aiButton: string;

@@ -3,6 +3,8 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useQuizStepAnalytics } from "@/hooks/useQuizStepAnalytics";
+import { useProfileSummaryById } from "@/hooks/useProfileSummary";
+import AiGenerateButton from "@/components/AiGenerateButton";
 import {
   ArrowLeft,
   ArrowRight,
@@ -63,19 +65,7 @@ import type {
   QuizPartialAnswers,
   VisitorRegion,
 } from "@/lib/types";
-
-const SESSION_KEY = "itstoday_session_id";
-
-function getOrCreateSessionId(): string {
-  if (typeof window === "undefined") return "";
-  let id = localStorage.getItem(SESSION_KEY);
-  if (!id) {
-    id = crypto.randomUUID();
-    localStorage.setItem(SESSION_KEY, id);
-  }
-  return id;
-}
-
+import { getOrCreateSessionId, persistVisitorContext } from "@/lib/session-id";
 
 export default function QuizLanding() {
   const { locale, copy } = useQuizLocale();
@@ -85,6 +75,7 @@ export default function QuizLanding() {
   const utmCampaign = searchParams.get("utm_campaign") ?? undefined;
 
   const [profileId, setProfileId] = useState<string | null>(null);
+  const [sessionId, setSessionId] = useState("");
   const [step, setStep] = useState<QuizStepId>(1);
   const [quizVariant, setQuizVariant] = useState<QuizVariantConfig>(CONTROL_VARIANT);
   const [submitting, setSubmitting] = useState(false);
@@ -98,6 +89,28 @@ export default function QuizLanding() {
   const [detectedRegion, setDetectedRegion] = useState<VisitorRegion>("other");
   const [countryCode, setCountryCode] = useState<string | undefined>();
   const [contactRegion, setContactRegion] = useState<VisitorRegion>("other");
+
+  const completionSummaryProfileId = step === 4 && completedQuiz ? profileId : null;
+  const {
+    summary: completionSummary,
+    loading: loadingCompletionSummary,
+    generating: generatingCompletionSummary,
+    aiAvailable: completionAiAvailable,
+    source: completionSummarySource,
+    generateWithAi: generateCompletionSummary,
+    reloadTemplate: reloadCompletionTemplate,
+  } = useProfileSummaryById(
+    completionSummaryProfileId,
+    completedQuiz?.score !== undefined ? String(completedQuiz.score) : "",
+    sessionId,
+  );
+
+  useEffect(() => {
+    if (!completionSummary) return;
+    setVisitorNextSteps(completionSummary.visitorNextSteps ?? []);
+    setEmpatheticResponse(completionSummary.empatheticResponse ?? null);
+    setLoadingNextSteps(loadingCompletionSummary);
+  }, [completionSummary, loadingCompletionSummary]);
 
   const [stepReward, setStepReward] = useState<{ step: QuizStepId; visible: boolean }>({
     step: 1,
@@ -174,7 +187,7 @@ export default function QuizLanding() {
     [quizVariant.stepOrder, copy.steps],
   );
 
-  const { containerRef, endStep, willingness } = useQuizStepAnalytics(profileId, activeModule);
+  const { containerRef, endStep } = useQuizStepAnalytics(profileId, activeModule);
 
   const concernOptions = useMemo(
     () => Object.entries(copy.concerns) as [PrimaryConcern, string][],
@@ -182,15 +195,16 @@ export default function QuizLanding() {
   );
 
   useEffect(() => {
-    const sessionId = getOrCreateSessionId();
-    if (!sessionId) return;
+    const sid = getOrCreateSessionId();
+    if (!sid) return;
+    setSessionId(sid);
 
     void (async () => {
       const res = await fetch("/api/context", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          sessionId,
+          sessionId: sid,
           utm_source: utmSource,
           utm_campaign: utmCampaign,
           preferredLanguage: locale,
@@ -199,6 +213,12 @@ export default function QuizLanding() {
       if (!res.ok) return;
       const data = (await res.json()) as ContextResponse;
       setProfileId(data.profileId);
+      setSessionId(data.sessionId);
+      persistVisitorContext({
+        profileId: data.profileId,
+        sessionId: data.sessionId,
+        unomiProfileId: data.unomiProfileId,
+      });
       setDetectedRegion(data.detectedRegion);
       setCountryCode(data.countryCode);
       setContactRegion(data.detectedRegion);
@@ -228,12 +248,13 @@ export default function QuizLanding() {
         body: JSON.stringify({
           action: "track",
           profileId,
+          sessionId,
           eventType: "contentEngagement",
           properties: { topic, dwellSeconds: 45 },
         }),
       });
     },
-    [profileId],
+    [profileId, sessionId],
   );
 
   const validateLeavingModule = (module: QuizStepId): string | null => {
@@ -317,7 +338,12 @@ export default function QuizLanding() {
     const res = await fetch("/api/events", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "quiz", profileId, answers }),
+      body: JSON.stringify({
+        action: "quiz",
+        profileId,
+        sessionId,
+        answers,
+      }),
     });
 
     setSubmitting(false);
@@ -336,19 +362,7 @@ export default function QuizLanding() {
     setLoadingNextSteps(true);
     setEmpatheticResponse(null);
     setVisitorNextSteps([]);
-    void (async () => {
-      const sumRes = await fetch(`/api/summary?profileId=${encodeURIComponent(profileId)}`, {
-        cache: "no-store",
-      });
-      if (!sumRes.ok) {
-        setLoadingNextSteps(false);
-        return;
-      }
-      const sumData = (await sumRes.json()) as { summary: AiSummary };
-      setVisitorNextSteps(sumData.summary.visitorNextSteps ?? []);
-      setEmpatheticResponse(sumData.summary.empatheticResponse ?? null);
-      setLoadingNextSteps(false);
-    })();
+    void reloadCompletionTemplate();
   };
 
   const continueToFollowUp = () => {
@@ -376,13 +390,7 @@ return (
               <p className="max-w-lg text-base leading-relaxed text-muted-foreground sm:text-lg">
                 {copy.hero.subtitle}
               </p>
-              <QuizStepCoach
-                profileId={profileId}
-                step={activeModule}
-                partialAnswers={partialAnswers}
-                willingness={willingness}
-                className="bg-card/60 shadow-sm"
-              />
+              <QuizStepCoach step={activeModule} className="bg-card/60 shadow-sm" />
             </div>
 
             </div>
@@ -728,6 +736,13 @@ return (
 
               {step === 4 && completedQuiz && (
                 <div className="space-y-6">
+                  <AiGenerateButton
+                    aiAvailable={completionAiAvailable}
+                    source={completionSummarySource}
+                    generating={generatingCompletionSummary}
+                    onGenerate={() => void generateCompletionSummary()}
+                    label="Personalize results with AI"
+                  />
                   <ScoreReveal copy={copy} quiz={completedQuiz} firstName={form.firstName} visitorNextSteps={visitorNextSteps} loadingNextSteps={loadingNextSteps} empatheticResponse={empatheticResponse ?? undefined} loadingEmpathetic={loadingNextSteps && !empatheticResponse} />
                   {!loadingNextSteps && form.contactChannel !== "on_page" && (
                     <p className="text-sm leading-relaxed text-muted-foreground">
@@ -740,6 +755,7 @@ return (
 
               <QuizStepHelpChat
                 profileId={profileId}
+                sessionId={sessionId}
                 step={activeModule}
                 partialAnswers={partialAnswers}
               />

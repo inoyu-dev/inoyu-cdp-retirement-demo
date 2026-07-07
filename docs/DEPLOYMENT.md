@@ -1,12 +1,12 @@
 # Deployment guide — Vercel + Inoyu.dev
 
-Deploy the **LeadLens** FinPub retirement CDP demo frontend to Vercel with a custom subdomain on `inoyu.dev`, connected to remote Apache Unomi and Infomaniak AI (or another OpenAI-compatible LLM).
+Deploy the **Inoyu CDP Retirement Demo** frontend to Vercel with a custom subdomain on `inoyu.dev`, connected to remote Apache Unomi and Infomaniak AI (or another OpenAI-compatible LLM).
 
 ---
 
 ## Recommended URL
 
-The public URL should speak to **pre-retiree visitors** (ad clicks, quiz landing), not operators or judges. Use an `inoyu.dev` subdomain — no new domain purchase required.
+The public URL should speak to **pre-retiree visitors** (ad clicks, quiz landing), not internal tooling names. Use an `inoyu.dev` subdomain — no new domain purchase required.
 
 | Priority | Subdomain | Why |
 |----------|-----------|-----|
@@ -14,7 +14,7 @@ The public URL should speak to **pre-retiree visitors** (ad clicks, quiz landing
 | Alt (warm) | `retire-ready.inoyu.dev` | Slightly more motivational; same audience |
 | Alt (specific) | `your-retirement.inoyu.dev` | Conversational; good for email/SMS deep links |
 
-**Deploy production on `retirement.inoyu.dev`.** Judges and media buyers use the same URL; they sign in at `/login`, then open `/dashboard` or `/demo` as needed. Avoid internal names (`leadlens`, `finup-demo`) in the public URL — those belong in docs and repo metadata only.
+**Deploy production on `retirement.inoyu.dev`.** Operators and media buyers use the same URL; they sign in at `/login`, then open `/dashboard` or `/demo` as needed. Avoid internal codenames in the public URL — use the production hostname only.
 
 ---
 
@@ -30,11 +30,10 @@ The public URL should speak to **pre-retiree visitors** (ad clicks, quiz landing
                                │              │
                                ▼              ▼
                     Region-aware quiz    Remote Apache Unomi
-                    channel UI           (UNOMI_BASE_URL)
+                    channel UI           (Infomaniak managed K8s)
                                │
                                ▼
-                    Infomaniak AI / LLM API
-                    (INFOMANIAK_* or OPENAI_*)
+                    Infomaniak AI Tools (stateless — no prompt retention)
 ```
 
 ### Critical: serverless filesystem
@@ -48,7 +47,7 @@ Vercel **does not persist** writes to `.data/` across requests or redeploys. On 
 | `.data/ai-usage.json` | Works | Resets on cold starts / redeploys — OK for rough demo estimates |
 | `.data/quiz-experiment.json` | Works | Ephemeral — A/B variant state may reset |
 
-**Minimum for a live showcase on Vercel:** configure `UNOMI_BASE_URL` (+ credentials) **and** `INFOMANIAK_API_TOKEN` + `INFOMANIAK_AI_PRODUCT_ID` (or `OPENAI_API_KEY`).
+**Minimum for a live demo on Vercel:** configure `UNOMI_BASE_URL` (+ credentials) **and** `INFOMANIAK_API_TOKEN` + `INFOMANIAK_AI_PRODUCT_ID` (or `OPENAI_API_KEY`).
 
 ---
 
@@ -56,11 +55,12 @@ Vercel **does not persist** writes to `.data/` across requests or redeploys. On 
 
 ### Phase 0 — Prerequisites (1–2 days before)
 
-- [ ] Git repository pushed to GitHub (or GitLab/Bitbucket connected to Vercel)
+- [ ] Git repository [`inoyu-dev/inoyu-cdp-retirement-demo`](https://github.com/inoyu-dev/inoyu-cdp-retirement-demo) on GitHub (connected to Vercel)
 - [ ] Vercel team/project access (Inoyu org)
 - [ ] DNS access for `inoyu.dev` (add CNAME)
 - [ ] Remote Unomi reachable over **HTTPS** from the public internet
 - [ ] Unomi scope `UNOMI_SCOPE` created; Karaf user can call `/cxs/context.json`
+- [ ] Visitor httpOnly cookies set on `/api/context` and mutation routes (check browser devtools)
 - [ ] Infomaniak AI Tools token + product id (or other OpenAI-compatible API key)
 - [ ] Production secrets generated locally:
 
@@ -74,7 +74,7 @@ openssl rand -base64 24 | tr -d '/+=' | head -c 20   # → DEMO_PASSWORD (exampl
 - [ ] Connect repo to Vercel → first **Preview** deployment
 - [ ] Set Preview env vars (can use weaker demo password)
 - [ ] Run `npm run verify:integrations` locally against same Unomi URL
-- [ ] Walk `/demo` → quiz → `/dashboard` on preview URL
+- [ ] Walk `/demo` → quiz → `/dashboard`; open `/dashboard/demo-usage` via direct URL (hidden from nav)
 
 ### Phase 2 — Production deploy
 
@@ -84,11 +84,60 @@ openssl rand -base64 24 | tr -d '/+=' | head -c 20   # → DEMO_PASSWORD (exampl
 - [ ] Production deploy from `main` branch
 - [ ] Smoke test checklist (end of this doc)
 
-### Phase 3 — Showcase handoff
+### Phase 3 — Demo handoff
 
 - [ ] Share visitor URL `https://retirement.inoyu.dev` in ads / walkthroughs
-- [ ] Share `DEMO_PASSWORD` privately with judges and testers
+- [ ] Share `DEMO_PASSWORD` privately with demo visitors and testers
 - [ ] Monitor Vercel deployment logs + Unomi during live demo
+
+---
+
+## Automated deploy (Vercel CLI)
+
+This repo includes npm scripts and a GitHub Action for repeatable deploys.
+
+### One-time local setup
+
+```bash
+npm install
+npx vercel login             # OAuth device flow — approve in browser (do not use email login)
+npm run vercel:link          # links to inoyu-dev/inoyu-cdp-retirement-demo (or create new)
+npm run vercel:env:sync      # pushes .env.local → Vercel production + preview
+```
+
+**Login error (410 legacy flow)?** Upgrade the project CLI: `npm install` (uses `vercel@^54`), then run `npx vercel login` again. Email-based login is no longer supported.
+
+Rotate `DEMO_PASSWORD` and `DEMO_AUTH_SECRET` in `.env.local` **before** syncing.
+
+**Why does `vercel env pull` show empty values?** Sensitive Production variables are not exported into local files — you will see `NAME=""`. That is expected. Use the Vercel dashboard (**Reveal**) or `npm run vercel:env:verify` to confirm lengths. After syncing, run `npm run deploy:vercel` so Production deployments pick up new values.
+
+
+
+### Deploy from your machine
+
+```bash
+npm run verify:integrations  # optional — runs automatically unless --skip-verify
+npm run deploy:vercel          # production (--prod); runs test:smoke:prod after deploy
+npm run deploy:vercel:preview  # preview URL only
+npm run test:smoke:prod        # post-deploy smoke against retirement.inoyu.dev
+```
+
+### CI deploy on push to `main`
+
+Workflow: `.github/workflows/vercel-production.yml`
+
+Add these **GitHub repository secrets** (Settings → Secrets → Actions):
+
+| Secret | Where to get it |
+|--------|------------------|
+| `VERCEL_TOKEN` | [vercel.com/account/tokens](https://vercel.com/account/tokens) |
+| `VERCEL_ORG_ID` | Vercel project → Settings → General, or `vercel project ls` |
+| `VERCEL_PROJECT_ID` | Same as above |
+
+After secrets are set, every push to `main` builds and deploys production. You can also run the workflow manually (**Actions → Vercel Production → Run workflow**).
+
+Environment variables for CI builds are pulled from Vercel (`vercel pull`) — keep them in the Vercel dashboard or sync with `npm run vercel:env:sync`.
+
 
 ---
 
@@ -97,7 +146,7 @@ openssl rand -base64 24 | tr -d '/+=' | head -c 20   # → DEMO_PASSWORD (exampl
 ### 1. Import repository
 
 1. Go to [vercel.com/new](https://vercel.com/new)
-2. Import `itstoday-media-contest` (or your fork)
+2. Import [`inoyu-dev/inoyu-cdp-retirement-demo`](https://github.com/inoyu-dev/inoyu-cdp-retirement-demo) (or your fork)
 3. Framework preset: **Next.js** (auto-detected)
 4. Root directory: `./`
 5. Build command: `npm run build` (default)
@@ -111,10 +160,10 @@ Add these in **Project → Settings → Environment Variables** for **Production
 |----------|------------|-------|
 | `DEMO_PASSWORD` | ✅ Required | Strong shared password for `/login` |
 | `DEMO_AUTH_SECRET` | ✅ Required | Output of `openssl rand -hex 32` |
-| `UNOMI_BASE_URL` | ✅ Required | e.g. `https://unomi.inoyu.dev:8181` — no trailing slash |
+| `UNOMI_BASE_URL` | ✅ Required | e.g. `https://test-cdp.inoyu.dev` — no trailing slash |
 | `UNOMI_USERNAME` | ✅ Required | Karaf admin |
 | `UNOMI_PASSWORD` | ✅ Required | Karaf admin |
-| `UNOMI_SCOPE` | ✅ Required | e.g. `itstoday` |
+| `UNOMI_SCOPE` | ✅ Required | e.g. `inoyu-cdp-retirement` |
 | `UNOMI_CONTEXT_USE_ADMIN_AUTH` | ✅ | `true` for remote v2 |
 | `INFOMANIAK_API_TOKEN` | ✅ Required* | Infomaniak Manager → API token (AI Tools scope) |
 | `INFOMANIAK_AI_PRODUCT_ID` | ✅ Required* | From `GET https://api.infomaniak.com/1/ai` |
@@ -126,7 +175,8 @@ Add these in **Project → Settings → Environment Variables** for **Production
 | `OPENAI_COST_OUTPUT_PER_MTOK` | Optional | Marketer cost panel |
 | `UNOMI_VERSION` | Optional | `v2` or `v3` |
 | `UNOMI_TENANT_PUBLIC_TOKEN` | v3 only | Inoyu multi-tenant |
-| `UNOMI_DEBUG` | Optional | `true` during first deploy only |
+| `LOG_LEVEL` | Optional | `debug` for verbose server traces |
+| `UNOMI_DEBUG` | Optional | `true` during first deploy (also enables debug logs) |
 
 **Do not** commit `.env.local`. Copy from `.env.example` as a checklist.
 
@@ -173,12 +223,16 @@ npm run build
 
 Then on the live URL (after logging in):
 
+**Automated:** `npm run test:smoke:prod` — login, auth gate, integration health, and key pages on `https://retirement.inoyu.dev`. Use `SMOKE_BASE_URL` for a preview deployment. Production deploy runs this automatically unless you pass `--skip-smoke` to `deploy:vercel`.
+
+**Manual checklist:**
+
 | Check | URL / action | Expected |
 |-------|----------------|----------|
 | Demo gate | `/` without cookie | Redirect to `/login` |
 | Login | `/login` + name + password | Lands on quiz |
 | Visitor entry | `/?utm_source=meta` | Quiz loads — URL reads naturally in ad mockups |
-| Integrations | `/dashboard` badges | **Live showcase** if Unomi + LLM OK |
+| Integrations | `/dashboard` badges | **Live demo** if Unomi + LLM OK |
 | Health API | `GET /api/integrations/health` | `openai.ok` and `unomi.ok` true |
 | Region | Quiz step 3 | Channels match your country (Vercel IP header) |
 | Unomi events | Complete quiz | Events visible in Unomi admin |
@@ -194,7 +248,7 @@ Then on the live URL (after logging in):
 4. **Auth** — credentials in Vercel match Karaf user with context + REST access.
 5. **CORS** — not required for server-side Next.js API routes (browser never calls Unomi directly).
 
-If context ingestion fails, set `UNOMI_DEBUG=true` temporarily and inspect Vercel **Functions** logs.
+If context ingestion fails, inspect Vercel **Functions** logs — Unomi and API errors always include scope, status, session/profile ids (truncated), and stack traces. Set `LOG_LEVEL=debug` for verbose success traces.
 
 ---
 
@@ -219,14 +273,14 @@ Keep previous `DEMO_PASSWORD` unchanged during rollback unless you rotated it.
 
 ## Security notes for public demo
 
-- Rotate `DEMO_PASSWORD` after the contest if the URL stays public
+- Rotate `DEMO_PASSWORD` if the URL stays public
 - Never commit API keys or Karaf passwords
 - `DEMO_AUTH_SECRET` must differ from dev default
 - Session cookies are `httpOnly` + `secure` in production (`NODE_ENV=production`)
 
 ---
 
-## Operator / judge handout (template)
+## Operator handout (template)
 
 The **visitor-facing** link is the root URL. Share login credentials separately — never in public README.
 
@@ -238,11 +292,11 @@ Visitor URL:  https://retirement.inoyu.dev/?utm_source=meta
 Login:        https://retirement.inoyu.dev/login
 Password:     [shared DEMO_PASSWORD — ask operator]
 
-Walkthrough for judges:
+Suggested walkthrough:
 1. Sign in with your name + shared password
 2. Visitor tab: quiz from Meta ad (?utm_source=meta)
 3. Operator tab: /dashboard (marketing view)
-4. Optional: /demo for contest instructions only
+4. Optional: /demo for product walkthrough
 ```
 
 ---

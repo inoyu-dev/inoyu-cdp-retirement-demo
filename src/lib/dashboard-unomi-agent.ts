@@ -1,3 +1,4 @@
+import { logWarn } from "./logger";
 import {
   executeUnomiMcpTool,
   type AgentChartSpec,
@@ -161,7 +162,11 @@ export async function runDashboardUnomiAgent(input: {
         let args: Record<string, unknown> = {};
         try {
           args = JSON.parse(call.function.arguments) as Record<string, unknown>;
-        } catch {
+        } catch (error) {
+          logWarn("dashboard-agent", "Failed to parse tool call arguments", {
+            tool: call.function.name,
+            raw: call.function.arguments?.slice(0, 200),
+          }, error);
           args = {};
         }
         if (!args.profileId && input.profileId) {

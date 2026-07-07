@@ -188,7 +188,7 @@ function buildMarketerNextSteps(profile: VisitorProfile): string[] {
   return steps.slice(0, 5);
 }
 
-function buildTemplateSummary(profile: VisitorProfile): AiSummary {
+export function buildTemplateSummary(profile: VisitorProfile): AiSummary {
   const quiz = profile.quiz;
   const firstName = quiz?.firstName ?? "This visitor";
   const age = quiz?.age ?? null;

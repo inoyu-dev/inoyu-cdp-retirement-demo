@@ -9,15 +9,22 @@ import ProfileListSidebar from "@/components/dashboard/ProfileListSidebar";
 import VisitorProfileDetail from "@/components/dashboard/VisitorProfileDetail";
 import { useDashboardProfiles } from "@/hooks/useDashboardProfiles";
 import { useSelectedProfile } from "@/hooks/useSelectedProfile";
-import { useVisitorSummary } from "@/hooks/useVisitorSummary";
+import { useProfileSummary } from "@/hooks/useProfileSummary";
 
 function DashboardVisitorsInner() {
   const { profiles } = useDashboardProfiles();
   const { selected, setSelectedId } = useSelectedProfile(profiles);
-  const { summary, loadingSummary } = useVisitorSummary(selected);
+  const {
+    summary,
+    loading: loadingSummary,
+    generating: generatingSummary,
+    aiAvailable,
+    source: summarySource,
+    generateWithAi,
+  } = useProfileSummary(selected);
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 sm:space-y-8">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="space-y-2">
           <h1 className="font-heading text-3xl font-semibold tracking-tight sm:text-4xl">
@@ -30,7 +37,7 @@ function DashboardVisitorsInner() {
         {selected ? (
           <Button
             variant="default"
-            className="gap-1.5"
+            className="w-full gap-1.5 sm:w-auto"
             nativeButton={false}
             render={
               <Link href={`/follow-up?profileId=${selected.profileId}`} />
@@ -48,6 +55,7 @@ function DashboardVisitorsInner() {
             profiles={profiles}
             selectedId={selected?.profileId ?? null}
             onSelect={setSelectedId}
+            scrollClassName="h-[min(220px,32vh)] lg:h-[min(520px,60vh)]"
           />
         </aside>
         <main>
@@ -62,6 +70,10 @@ function DashboardVisitorsInner() {
               profile={selected}
               summary={summary}
               loadingSummary={loadingSummary}
+              aiAvailable={aiAvailable}
+              summarySource={summarySource}
+              generatingSummary={generatingSummary}
+              onGenerateSummary={() => void generateWithAi()}
             />
           )}
         </main>

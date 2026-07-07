@@ -28,12 +28,12 @@ export default function CdpMockNotice() {
       </CardHeader>
       <CardContent className="text-sm text-muted-foreground">
         <p>
-          Quiz events still flow through the same server routes that mirror production Unomi ingestion. Judges can
+          Quiz events still flow through the same server routes that mirror production Unomi ingestion. You can
           verify the full visitor → profile → AI brief loop; only the remote CDP host is simulated.
         </p>
         <p className="mt-2">
-          <Link href="/demo#unomi-mock" className="font-medium text-foreground underline-offset-4 hover:underline">
-            Read the contest note on /demo
+          <Link href="/demo#unomi" className="font-medium text-foreground underline-offset-4 hover:underline">
+            Read more on /demo
           </Link>
         </p>
       </CardContent>

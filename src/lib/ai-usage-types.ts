@@ -1,7 +1,6 @@
 export type AiUsageFeature =
   | "ai-summary"
   | "ai-funnel-analysis"
-  | "ai-step-personalization"
   | "quiz-chat"
   | "sms-agent"
   | "quiz-variant-proposal"
@@ -10,7 +9,6 @@ export type AiUsageFeature =
 export const AI_USAGE_FEATURE_LABELS: Record<AiUsageFeature, string> = {
   "ai-summary": "Visitor summaries",
   "ai-funnel-analysis": "Funnel analysis",
-  "ai-step-personalization": "Step personalization",
   "quiz-chat": "Quiz chat",
   "sms-agent": "SMS replies",
   "quiz-variant-proposal": "Quiz variant proposals",

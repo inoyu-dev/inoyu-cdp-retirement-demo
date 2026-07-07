@@ -1,3 +1,4 @@
+import { LOCALE_STORAGE_KEY } from "../app-identity";
 import { getContactChannelGroupsForRegion } from "../contact-channels";
 import type { ContactChannel } from "../types";
 import type { VisitorRegion } from "../region";
@@ -5,9 +6,8 @@ import { format, getQuizCopy } from "./translations";
 import type { AppLocale, QuizCopy } from "./types";
 
 export * from "./types";
+export { LOCALE_STORAGE_KEY };
 export { format, getQuizCopy } from "./translations";
-
-export const LOCALE_STORAGE_KEY = "itstoday_locale";
 
 export function isAppLocale(value: string): value is AppLocale {
   return value === "en" || value === "es" || value === "zh" || value === "fr" || value === "ja";

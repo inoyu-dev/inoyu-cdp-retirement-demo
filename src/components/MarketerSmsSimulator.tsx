@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useIntegrationsHealth } from "@/hooks/useIntegrationsHealth";
 import {
   Bot,
   Loader2,
@@ -27,17 +28,20 @@ import { cn } from "@/lib/utils";
 
 type Props = {
   profileId: string;
+  sessionId: string;
   profileName?: string;
 };
 
 type ReplyMeta = SmsReplyResult;
 
-export default function MarketerSmsSimulator({ profileId, profileName }: Props) {
+export default function MarketerSmsSimulator({ profileId, sessionId, profileName }: Props) {
+  const { health } = useIntegrationsHealth();
+  const aiAvailable = health?.openai.ok ?? false;
   const [profile, setProfile] = useState<VisitorProfile | null>(null);
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
   const [starting, setStarting] = useState(false);
-  const [useAi, setUseAi] = useState(true);
+  const [useAi, setUseAi] = useState(false);
   const [lastMeta, setLastMeta] = useState<ReplyMeta | null>(null);
   const [error, setError] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -48,7 +52,7 @@ export default function MarketerSmsSimulator({ profileId, profileName }: Props) 
     const res = await fetch("/api/sms", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "start", profileId, force }),
+      body: JSON.stringify({ action: "start", profileId, sessionId, force }),
     });
     setStarting(false);
     if (!res.ok) {
@@ -58,7 +62,7 @@ export default function MarketerSmsSimulator({ profileId, profileName }: Props) 
     const data = (await res.json()) as { profile: VisitorProfile };
     setProfile(data.profile);
     setLastMeta(null);
-  }, [profileId]);
+  }, [profileId, sessionId]);
 
   useEffect(() => {
     void startThread(false);
@@ -78,7 +82,7 @@ export default function MarketerSmsSimulator({ profileId, profileName }: Props) 
     const res = await fetch("/api/sms", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "reply", profileId, message: text, useAi }),
+      body: JSON.stringify({ action: "reply", profileId, sessionId, message: text, useAi }),
     });
 
     setSending(false);
@@ -97,7 +101,7 @@ export default function MarketerSmsSimulator({ profileId, profileName }: Props) 
     await fetch("/api/sms", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "reset", profileId }),
+      body: JSON.stringify({ action: "reset", profileId, sessionId }),
     });
     await startThread(true);
   };
@@ -118,6 +122,8 @@ export default function MarketerSmsSimulator({ profileId, profileName }: Props) 
             </CardDescription>
           </div>
           <div className="flex flex-wrap gap-2">
+            {aiAvailable ? (
+            <>
             <Button
               type="button"
               size="sm"
@@ -138,6 +144,10 @@ export default function MarketerSmsSimulator({ profileId, profileName }: Props) 
               <Bot className="size-3.5" aria-hidden />
               Templates only
             </Button>
+            </>
+            ) : (
+              <Badge variant="outline" className="text-muted-foreground">Template replies (AI not configured)</Badge>
+            )}
             <Button
               type="button"
               size="sm"

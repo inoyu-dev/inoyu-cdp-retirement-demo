@@ -9,15 +9,17 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import type { QuizStepId } from "@/lib/quiz-flow";
 import type { QuizChatMessage, QuizChatMode, QuizPartialAnswers } from "@/lib/types";
+import { withSessionQuery } from "@/lib/session-id";
 import { cn } from "@/lib/utils";
 
 type Props = {
   profileId: string | null;
+  sessionId: string | null;
   step: QuizStepId;
   partialAnswers: QuizPartialAnswers;
 };
 
-export default function QuizStepHelpChat({ profileId, step, partialAnswers }: Props) {
+export default function QuizStepHelpChat({ profileId, sessionId, step, partialAnswers }: Props) {
   const { copy } = useQuizLocale();
   const help = copy.stepHelp;
   const [open, setOpen] = useState(false);
@@ -34,7 +36,7 @@ export default function QuizStepHelpChat({ profileId, step, partialAnswers }: Pr
 
   const loadFromProfile = useCallback(async () => {
     if (!profileId) return;
-    const res = await fetch(`/api/profile?profileId=${encodeURIComponent(profileId)}`, {
+    const res = await fetch(withSessionQuery(`/api/profile?profileId=${encodeURIComponent(profileId)}`, sessionId), {
       cache: "no-store",
     });
     if (!res.ok) return;
@@ -55,6 +57,7 @@ export default function QuizStepHelpChat({ profileId, step, partialAnswers }: Pr
           body: JSON.stringify({
             action: "start",
             profileId,
+            sessionId: sessionId ?? undefined,
             mode: nextMode,
             step,
             partial: partialAnswers,
@@ -73,7 +76,7 @@ export default function QuizStepHelpChat({ profileId, step, partialAnswers }: Pr
         setLoading(false);
       }
     },
-    [profileId, step, partialAnswers, help.sendError],
+    [profileId, sessionId, step, partialAnswers, help.sendError],
   );
 
   const openChat = (nextMode: QuizChatMode) => {
@@ -114,6 +117,7 @@ export default function QuizStepHelpChat({ profileId, step, partialAnswers }: Pr
         body: JSON.stringify({
           action: "reply",
           profileId,
+          sessionId: sessionId ?? undefined,
           mode,
           step,
           message: text,
@@ -144,7 +148,7 @@ export default function QuizStepHelpChat({ profileId, step, partialAnswers }: Pr
       return;
     }
     void (async () => {
-      const res = await fetch(`/api/profile?profileId=${encodeURIComponent(profileId)}`, {
+      const res = await fetch(withSessionQuery(`/api/profile?profileId=${encodeURIComponent(profileId)}`, sessionId), {
         cache: "no-store",
       });
       if (!res.ok) return;

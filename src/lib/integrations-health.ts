@@ -36,3 +36,17 @@ export async function getIntegrationsHealth(): Promise<IntegrationsHealthPayload
 export function isShowcaseLive(payload: IntegrationsHealthPayload): boolean {
   return payload.showcaseMode === "full-live" || payload.showcaseMode === "demo-live";
 }
+
+/** User-facing label for integration health badge (API field remains `showcaseMode`). */
+export function showcaseModeLabel(mode: ShowcaseMode | string | undefined): string {
+  switch (mode) {
+    case "full-live":
+      return "Live demo";
+    case "demo-live":
+      return "Hybrid live";
+    case "fallback":
+      return "Local fallback";
+    default:
+      return mode ?? "—";
+  }
+}

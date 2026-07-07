@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { apiErrorResponse } from "@/lib/api-errors";
+import { logError } from "@/lib/logger";
 import { recordDemoLogin } from "@/lib/demo-analytics-store";
 import {
   createDemoSessionToken,
@@ -28,7 +30,11 @@ export async function POST(request: Request) {
       expiresAt: now + SESSION_TTL_MS,
     };
 
-    await recordDemoLogin(session);
+    try {
+      await recordDemoLogin(session);
+    } catch (err) {
+      logError("demo-auth/login", "Demo login analytics failed (non-fatal)", { username, demoUserId: session.demoUserId }, err);
+    }
     const token = await createDemoSessionToken(username);
 
     const response = NextResponse.json({ ok: true, username, demoUserId: session.demoUserId });
@@ -38,7 +44,7 @@ export async function POST(request: Request) {
       demoSessionCookieOptions(30 * 24 * 60 * 60),
     );
     return response;
-  } catch {
-    return NextResponse.json({ error: "Login failed" }, { status: 500 });
+  } catch (error) {
+    return apiErrorResponse("demo-auth/login", "Login failed", error);
   }
 }

@@ -9,11 +9,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { withSessionQuery } from "@/lib/session-id";
 import type { VisitorProfile } from "@/lib/types";
 
-type Props = { profileId: string };
+type Props = { profileId: string; sessionId: string };
 
-export default function SmsSimulator({ profileId }: Props) {
+export default function SmsSimulator({ profileId, sessionId }: Props) {
   const [profile, setProfile] = useState<VisitorProfile | null>(null);
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
@@ -21,7 +22,7 @@ export default function SmsSimulator({ profileId }: Props) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const loadProfile = useCallback(async () => {
-    const res = await fetch(`/api/profile?profileId=${encodeURIComponent(profileId)}`, {
+    const res = await fetch(withSessionQuery(`/api/profile?profileId=${encodeURIComponent(profileId)}`, sessionId), {
       cache: "no-store",
     });
     if (!res.ok) return null;
@@ -35,7 +36,7 @@ export default function SmsSimulator({ profileId }: Props) {
       const startRes = await fetch("/api/sms", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "start", profileId }),
+        body: JSON.stringify({ action: "start", profileId, sessionId }),
       });
       if (startRes.ok) {
         const data = (await startRes.json()) as { profile: VisitorProfile };
@@ -48,7 +49,7 @@ export default function SmsSimulator({ profileId }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [profileId, loadProfile]);
+  }, [profileId, sessionId, loadProfile]);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
@@ -64,7 +65,7 @@ export default function SmsSimulator({ profileId }: Props) {
     const res = await fetch("/api/sms", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "reply", profileId, message: text }),
+      body: JSON.stringify({ action: "reply", profileId, sessionId, message: text }),
     });
 
     setSending(false);

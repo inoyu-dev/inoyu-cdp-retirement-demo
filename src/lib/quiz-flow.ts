@@ -12,28 +12,39 @@ export type QuizStepId = (typeof QUIZ_STEPS)[number]["id"];
 export const DEMO_FLOW_STEPS = [
   {
     id: 1,
-    title: "Open two tabs",
-    detail: "Tab A: visitor quiz (use simulated Meta or Taboola links below). Tab B: Marketing dashboard.",
+    title: "Open quiz + dashboard",
+    detail:
+      "Desktop: two tabs — visitor quiz (Meta/Taboola links below) and Marketing dashboard. Mobile: complete the quiz first, then open the dashboard from the menu (☰).",
   },
   {
     id: 2,
     title: "Visitor shows intent",
-    detail: "On quiz Step 2, expand Social Security or 401(k) reading — contentEngagement events appear on the dashboard timeline.",
+    detail:
+      "On Step 2, expand Social Security or 401(k) reading. Step timing, typing pace, pointer comfort, and contentEngagement events stream to the CDP with a persistent sessionId (required on Vercel).",
   },
   {
     id: 3,
-    title: "Visitor completes the quiz",
-    detail: "Step 3 auto-detects region from IP, lets the visitor override it, and shows only relevant channels (US: SMS/call; Asia: WhatsApp/LINE; other: WhatsApp). Then score reveal.",
+    title: "Optional in-quiz help",
+    detail:
+      "Try the AI or human help chat on any step (LLM replies in AI mode). Rotating “Did you know?” tips on the step coach are static — no LLM. Chat messages become Unomi events.",
   },
   {
     id: 4,
-    title: "Marketing user reviews the profile",
-    detail: "On the dashboard: lead score, segments, AI agent brief, and full event timeline (polls every 2s).",
+    title: "Complete the quiz",
+    detail:
+      "Step 3 detects region from IP (overridable) and shows region-appropriate channels. Submit for score reveal — optionally tap “Personalize results with AI” on Step 4.",
   },
   {
     id: 5,
-    title: "Visitor follow-up",
-    detail: "Visitor continues to their chosen channel — email, SMS, WhatsApp, LINE, callback, or on-page score — personalized from the profile.",
+    title: "Review the rich profile",
+    detail:
+      "Dashboard → Visitors: hero banner, attribute cards, engagement charts, categorized journey timeline. Tap “Generate brief with AI” when you want an LLM summary (cached on the profile).",
+  },
+  {
+    id: 6,
+    title: "AI tools + follow-up",
+    detail:
+      "Open /dashboard/demo-usage (direct URL from this walkthrough) to see who signed in and what they opened (mirrored to Unomi demo_platform). Then AI & tools: Unomi agent chat and SMS simulator. Visitor follow-up opens their chosen channel — email, SMS, WhatsApp, LINE, callback, or on-page (previews only; events still log to Unomi).",
   },
 ] as const;
 

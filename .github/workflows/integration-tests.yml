@@ -1,0 +1,78 @@
+name: Integration Tests
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  unomi:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - run: npm ci
+
+      - name: Unomi integration tests (skips when UNOMI_BASE_URL unset)
+        run: npm run test:integration
+        env:
+          UNOMI_BASE_URL: ${{ secrets.UNOMI_BASE_URL }}
+          UNOMI_SCOPE: ${{ secrets.UNOMI_SCOPE }}
+          UNOMI_USERNAME: ${{ secrets.UNOMI_USERNAME }}
+          UNOMI_PASSWORD: ${{ secrets.UNOMI_PASSWORD }}
+          UNOMI_TENANT_PUBLIC_TOKEN: ${{ secrets.UNOMI_TENANT_PUBLIC_TOKEN }}
+          RUN_AI_INTEGRATION_TESTS: ""
+
+      - name: Verify AI tests stay disabled in CI
+        run: npm run test:integration:ai
+        env:
+          RUN_AI_INTEGRATION_TESTS: ""
+
+  app:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run build
+
+      - name: App API integration tests
+        run: npm run test:app:integration
+        env:
+          DEMO_PASSWORD: inoyu-demo-local
+          DEMO_AUTH_SECRET: ci-test-auth-secret
+          DEMO_COOKIE_SECURE: "false"
+
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - run: npm ci
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Playwright E2E tests
+        run: npm run test:e2e -- --project=chromium
+        env:
+          CI: "true"
+          DEMO_PASSWORD: inoyu-demo-local
+          DEMO_AUTH_SECRET: ci-test-auth-secret
+          DEMO_COOKIE_SECURE: "false"

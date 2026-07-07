@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import type { VisitorProfile } from "@/lib/types";
+import { dedupeVisitorProfiles } from "@/lib/visitor-profile-merge";
 
 export function useDashboardProfiles(pollMs = 2000) {
   const [profiles, setProfiles] = useState<VisitorProfile[]>([]);
@@ -14,7 +15,11 @@ export function useDashboardProfiles(pollMs = 2000) {
       return;
     }
     const data = (await res.json()) as { profiles: VisitorProfile[] };
-    setProfiles(data.profiles);
+    setProfiles((prev) => {
+      const next = data.profiles ?? [];
+      if (next.length === 0 && prev.length > 0) return prev;
+      return dedupeVisitorProfiles([...prev, ...next]);
+    });
     setLoading(false);
   }, []);
 

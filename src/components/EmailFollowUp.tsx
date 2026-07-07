@@ -1,44 +1,24 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
 import { ArrowLeft, Inbox, Loader2, Mail } from "lucide-react";
+import AiGenerateButton from "@/components/AiGenerateButton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import type { AiSummary, VisitorProfile } from "@/lib/types";
+import { useProfileSummaryById } from "@/hooks/useProfileSummary";
+import type { VisitorProfile } from "@/lib/types";
 
-type Props = { profileId: string; profile: VisitorProfile };
+type Props = { profileId: string; profile: VisitorProfile; sessionId: string };
 
-export default function EmailFollowUp({ profileId, profile }: Props) {
-  const [summary, setSummary] = useState<AiSummary | null>(null);
-  const [loading, setLoading] = useState(true);
+export default function EmailFollowUp({ profileId, profile, sessionId }: Props) {
+  const { summary, loading, generating, aiAvailable, source, generateWithAi } =
+    useProfileSummaryById(profileId, "", sessionId);
 
   const firstName = profile.quiz?.firstName ?? "there";
   const email = profile.quiz?.email ?? "you@email.com";
   const score = profile.quiz?.score;
-
-  useEffect(() => {
-    let cancelled = false;
-    void (async () => {
-      const res = await fetch(`/api/summary?profileId=${encodeURIComponent(profileId)}`, {
-        cache: "no-store",
-      });
-      if (!res.ok || cancelled) {
-        if (!cancelled) setLoading(false);
-        return;
-      }
-      const data = (await res.json()) as { summary: AiSummary };
-      if (!cancelled) {
-        setSummary(data.summary);
-        setLoading(false);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [profileId]);
 
   const subject =
     score !== null && score !== undefined
@@ -58,6 +38,14 @@ export default function EmailFollowUp({ profileId, profile }: Props) {
             You chose email. Below is a preview of what we would send to{" "}
             <span className="font-medium text-foreground">{email}</span>.
           </p>
+          <AiGenerateButton
+            aiAvailable={aiAvailable}
+            source={source}
+            generating={generating}
+            onGenerate={() => void generateWithAi()}
+            label="Personalize email with AI"
+            className="justify-center"
+          />
         </div>
 
         <Card className="overflow-hidden border-border/70 shadow-lg" role="region" aria-label="Email inbox preview">
@@ -78,7 +66,7 @@ export default function EmailFollowUp({ profileId, profile }: Props) {
             {loading && (
               <p className="flex items-center gap-2 text-muted-foreground">
                 <Loader2 className="size-4 animate-spin" aria-hidden />
-                Preparing your personalized summary…
+                Loading template preview…
               </p>
             )}
             {summary && (

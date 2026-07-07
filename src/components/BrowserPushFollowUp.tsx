@@ -3,16 +3,18 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { ArrowLeft, Bell, BellRing, Loader2 } from "lucide-react";
+import AiGenerateButton from "@/components/AiGenerateButton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import type { AiSummary, VisitorProfile } from "@/lib/types";
+import { useProfileSummaryById } from "@/hooks/useProfileSummary";
+import type { VisitorProfile } from "@/lib/types";
 
-type Props = { profileId: string; profile: VisitorProfile };
+type Props = { profileId: string; profile: VisitorProfile; sessionId: string };
 
-export default function BrowserPushFollowUp({ profileId, profile }: Props) {
-  const [summary, setSummary] = useState<AiSummary | null>(null);
-  const [loading, setLoading] = useState(true);
+export default function BrowserPushFollowUp({ profileId, profile, sessionId }: Props) {
+  const { summary, loading, generating, aiAvailable, source, generateWithAi } =
+    useProfileSummaryById(profileId, "", sessionId);
   const [permission, setPermission] = useState<NotificationPermission | "unsupported">("default");
   const [demoShown, setDemoShown] = useState(false);
 
@@ -26,27 +28,6 @@ export default function BrowserPushFollowUp({ profileId, profile }: Props) {
     }
     setPermission(Notification.permission);
   }, []);
-
-  useEffect(() => {
-    let cancelled = false;
-    void (async () => {
-      const res = await fetch(`/api/summary?profileId=${encodeURIComponent(profileId)}`, {
-        cache: "no-store",
-      });
-      if (!res.ok || cancelled) {
-        if (!cancelled) setLoading(false);
-        return;
-      }
-      const data = (await res.json()) as { summary: AiSummary };
-      if (!cancelled) {
-        setSummary(data.summary);
-        setLoading(false);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [profileId]);
 
   const title =
     score !== null && score !== undefined
@@ -92,6 +73,14 @@ export default function BrowserPushFollowUp({ profileId, profile }: Props) {
           <p className="text-lg leading-relaxed text-muted-foreground">
             You chose a gentle alert on this device — no email or text required.
           </p>
+          <AiGenerateButton
+            aiAvailable={aiAvailable}
+            source={source}
+            generating={generating}
+            onGenerate={() => void generateWithAi()}
+            label="Personalize notification with AI"
+            className="justify-center"
+          />
         </div>
 
         <Card
@@ -115,7 +104,7 @@ export default function BrowserPushFollowUp({ profileId, profile }: Props) {
             {loading && (
               <p className="flex items-center gap-2 text-muted-foreground">
                 <Loader2 className="size-4 animate-spin" aria-hidden />
-                Loading your message…
+                Loading template preview…
               </p>
             )}
             {summary && !loading && summary.visitorNextSteps.length > 0 && (

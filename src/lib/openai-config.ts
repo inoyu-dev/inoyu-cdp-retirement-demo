@@ -1,4 +1,6 @@
 import type { AiUsageFeature } from "./ai-usage-types";
+import { OPENAI_APP_TITLE_DEFAULT } from "./app-identity";
+import { logError, logOpenAiFailure } from "./logger";
 
 export interface OpenAiHealthResult {
   configured: boolean;
@@ -110,7 +112,7 @@ function authHeaders(): Record<string, string> {
   const referer = process.env.OPENAI_HTTP_REFERER?.trim();
   if (referer) headers["HTTP-Referer"] = referer;
 
-  const title = process.env.OPENAI_APP_TITLE?.trim();
+  const title = (process.env.OPENAI_APP_TITLE?.trim() || OPENAI_APP_TITLE_DEFAULT);
   if (title) headers["X-Title"] = title;
 
   return headers;
@@ -134,8 +136,8 @@ async function trackOpenAiUsage(input: {
   try {
     const { recordAiUsage } = await import("./ai-usage-store");
     await recordAiUsage(input);
-  } catch {
-    // Usage tracking is best-effort and must not break AI calls.
+  } catch (error) {
+    logError("ai/usage", "Failed to record AI usage (non-fatal)", { feature: input.feature }, error);
   }
 }
 
@@ -154,7 +156,8 @@ export async function openAiChatCompletion(
       headers: authHeaders(),
       body: JSON.stringify({ model: getOpenAiModel(), ...body }),
     });
-  } catch {
+  } catch (error) {
+    logOpenAiFailure("chat/completions request", { model: getOpenAiModel() }, error);
     return null;
   }
 }
@@ -163,7 +166,16 @@ export async function parseOpenAiChatCompletion(
   response: Response,
   options?: OpenAiCallOptions,
 ): Promise<OpenAiChatCompletionResponse | null> {
-  if (!response.ok) return null;
+  if (!response.ok) {
+    const body = await response.text().catch(() => "");
+    logOpenAiFailure("chat/completions response", {
+      status: response.status,
+      feature: options?.feature,
+      model: getOpenAiModel(),
+      error: body.slice(0, 200) || response.statusText,
+    });
+    return null;
+  }
   try {
     const data = (await response.json()) as OpenAiChatCompletionResponse;
     const usage = data.usage;
@@ -177,7 +189,8 @@ export async function parseOpenAiChatCompletion(
       });
     }
     return data;
-  } catch {
+  } catch (error) {
+    logOpenAiFailure("parse chat completion JSON", { feature: options?.feature, model: getOpenAiModel() }, error);
     return null;
   }
 }
@@ -200,7 +213,8 @@ export async function openAiChatCompletionJson<T>(
   if (!text) return null;
   try {
     return JSON.parse(text) as T;
-  } catch {
+  } catch (error) {
+    logOpenAiFailure("parse chat completion text as JSON", { feature: options?.feature, model: getOpenAiModel(), preview: text.slice(0, 120) }, error);
     return null;
   }
 }
@@ -279,7 +293,8 @@ export async function checkOpenAiHealth(): Promise<OpenAiHealthResult> {
       latencyMs,
       message: `${provider} API error (${res.status})`,
     };
-  } catch {
+  } catch (error) {
+    logOpenAiFailure("health probe", { model, baseUrl, provider }, error);
     return {
       configured: true,
       ok: false,

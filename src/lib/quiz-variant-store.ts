@@ -1,15 +1,18 @@
 import { promises as fs } from "fs";
 import path from "path";
+import { getDataDir, isMemoryStore } from "./data-dir";
 import type {
+  CachedFunnelAnalysis,
   QuizExperiment,
   QuizExperimentStats,
+  QuizFunnelAnalysis,
   QuizVariantConfig,
   QuizVariantProposal,
 } from "./types";
 import { computeExperimentStats, CONTROL_VARIANT_ID } from "./quiz-variants";
 import { listProfiles } from "./local-store";
 
-const DATA_DIR = path.join(process.cwd(), ".data");
+const DATA_DIR = getDataDir();
 const STORE_PATH = path.join(DATA_DIR, "quiz-experiment.json");
 
 export interface QuizExperimentStore {
@@ -17,6 +20,8 @@ export interface QuizExperimentStore {
   pendingProposal: QuizVariantProposal | null;
   experiment: QuizExperiment | null;
   proposalHistory: QuizVariantProposal[];
+  /** Cached on-demand funnel AI analysis (global, not per visitor). */
+  cachedFunnelAnalysis?: CachedFunnelAnalysis;
 }
 
 const EMPTY_STORE: QuizExperimentStore = {
@@ -26,11 +31,18 @@ const EMPTY_STORE: QuizExperimentStore = {
   proposalHistory: [],
 };
 
+let memoryStore: QuizExperimentStore = { ...EMPTY_STORE };
+
 async function ensureDataDir(): Promise<void> {
+  if (isMemoryStore()) return;
   await fs.mkdir(DATA_DIR, { recursive: true });
 }
 
 async function readStore(): Promise<QuizExperimentStore> {
+  if (isMemoryStore()) {
+    return memoryStore;
+  }
+
   try {
     const raw = await fs.readFile(STORE_PATH, "utf8");
     return { ...EMPTY_STORE, ...JSON.parse(raw) } as QuizExperimentStore;
@@ -40,6 +52,10 @@ async function readStore(): Promise<QuizExperimentStore> {
 }
 
 async function writeStore(store: QuizExperimentStore): Promise<void> {
+  if (isMemoryStore()) {
+    memoryStore = store;
+    return;
+  }
   await ensureDataDir();
   await fs.writeFile(STORE_PATH, JSON.stringify(store, null, 2));
 }
@@ -126,6 +142,28 @@ export async function getVariantDashboardPayload(): Promise<{
     stats,
     proposalHistory: store.proposalHistory,
   };
+}
+
+export async function getCachedFunnelAnalysis(
+  fingerprint: string,
+): Promise<QuizFunnelAnalysis | null> {
+  const store = await readStore();
+  const cached = store.cachedFunnelAnalysis;
+  if (!cached || cached.fingerprint !== fingerprint) return null;
+  return cached.analysis;
+}
+
+export async function saveCachedFunnelAnalysis(
+  fingerprint: string,
+  analysis: QuizFunnelAnalysis,
+): Promise<void> {
+  const store = await readStore();
+  store.cachedFunnelAnalysis = {
+    fingerprint,
+    generatedAt: new Date().toISOString(),
+    analysis,
+  };
+  await writeStore(store);
 }
 
 export async function getVariantById(

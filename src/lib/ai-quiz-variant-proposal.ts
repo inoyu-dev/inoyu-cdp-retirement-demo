@@ -174,7 +174,11 @@ Return JSON only:
 export async function generateQuizVariantProposal(
   aggregate: QuizFunnelAggregate,
   analysis: QuizFunnelAnalysis,
+  options?: { useAi?: boolean },
 ): Promise<QuizVariantProposal | null> {
   if (!aggregate.hotspotStep && !analysis.hotspotStep) return null;
-  return openAiProposal(aggregate, analysis);
+  if (options?.useAi === true && isOpenAiConfigured()) {
+    return openAiProposal(aggregate, analysis);
+  }
+  return templateProposal(aggregate, analysis);
 }

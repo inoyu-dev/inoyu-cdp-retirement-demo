@@ -37,7 +37,11 @@ function LoginForm() {
 
     setLoading(false);
     if (!res.ok) {
-      setError("Invalid name or password. Use your name and the shared demo password.");
+      setError(
+        res.status === 401
+          ? "Invalid name or password. Use your name and the shared demo password."
+          : "Sign-in failed on the server. Try again in a moment.",
+      );
       return;
     }
 
@@ -55,7 +59,7 @@ function LoginForm() {
           </span>
           <CardTitle className="font-heading text-2xl">Demo access</CardTitle>
           <CardDescription>
-            Enter your name and the shared password to explore the retirement quiz demo.
+            Sign in to the Inoyu CDP Retirement Demo — shared password required for the quiz and marketing dashboard.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -69,7 +73,7 @@ function LoginForm() {
                 minLength={2}
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                placeholder="e.g. Alex from marketing"
+                placeholder="e.g. Alex, Inoyu sales"
               />
             </div>
             <div className="space-y-2">

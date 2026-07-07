@@ -1,3 +1,6 @@
+import { resolveUnomiScope, UNOMI_SOURCE_VISITOR } from "./app-identity";
+import { logError, logUnomiFailure, logDebug } from "./logger";
+
 /**
  * Shared Apache Unomi connection settings for remote server deployments.
  * All server-side Unomi calls should go through this module.
@@ -31,7 +34,7 @@ export function isUnomiConfigured(): boolean {
 }
 
 export function getUnomiScope(): string {
-  return process.env.UNOMI_SCOPE ?? "itstoday";
+  return resolveUnomiScope();
 }
 
 export function getUnomiVersion(): UnomiVersion {
@@ -102,7 +105,8 @@ export async function unomiAdminFetch(
         ...(init?.headers as Record<string, string> | undefined),
       },
     });
-  } catch {
+  } catch (error) {
+    logError("unomi/admin", "Admin API request threw", { path, method: init?.method ?? "GET" }, error);
     return null;
   }
 }
@@ -121,7 +125,8 @@ export async function unomiContextFetch(
         ...(init?.headers as Record<string, string> | undefined),
       },
     });
-  } catch {
+  } catch (error) {
+    logError("unomi/context", "Context API request threw", { path, method: init?.method ?? "GET" }, error);
     return null;
   }
 }
@@ -130,8 +135,15 @@ export async function sendUnomiContextRequest(
   sessionId: string,
   profileId: string | undefined,
   events: Array<Record<string, unknown>>,
-  sourceItemId = "retirement_quiz",
-): Promise<{ ok: boolean; status?: number; error?: string }> {
+  sourceItemId = UNOMI_SOURCE_VISITOR,
+  profileProperties?: Record<string, unknown>,
+): Promise<{
+  ok: boolean;
+  status?: number;
+  error?: string;
+  profileId?: string;
+  processedEvents?: number;
+}> {
   if (!isUnomiConfigured()) return { ok: false, error: "not configured" };
 
   const payload: Record<string, unknown> = {
@@ -147,18 +159,56 @@ export async function sendUnomiContextRequest(
   };
 
   if (profileId) payload.profileId = profileId;
+  if (profileProperties && Object.keys(profileProperties).length > 0) {
+    payload.properties = profileProperties;
+  }
 
   const res = await unomiContextFetch(
     `/cxs/context.json?sessionId=${encodeURIComponent(sessionId)}`,
     { method: "POST", body: JSON.stringify(payload) },
   );
 
-  if (!res) return { ok: false, error: "network error" };
+  if (!res) {
+    logUnomiFailure("context request", {
+      operation: "context.json",
+      sessionId: sessionId.slice(0, 8) + "…",
+      profileId,
+      sourceItemId,
+      eventTypes: events.map((e) => String(e.eventType ?? "unknown")),
+      reason: "network error (fetch returned null)",
+    });
+    return { ok: false, error: "network error" };
+  }
   if (!res.ok) {
     const body = await res.text().catch(() => "");
+    logUnomiFailure("context request", {
+      operation: "context.json",
+      sessionId: sessionId.slice(0, 8) + "…",
+      profileId,
+      sourceItemId,
+      eventTypes: events.map((e) => String(e.eventType ?? "unknown")),
+      status: res.status,
+      error: body.slice(0, 200) || res.statusText,
+    });
     return { ok: false, status: res.status, error: body.slice(0, 200) || res.statusText };
   }
-  return { ok: true, status: res.status };
+
+  let returnedProfileId: string | undefined;
+  let processedEvents = 0;
+  try {
+    const data = (await res.json()) as {
+      profileId?: string;
+      processedEvents?: unknown;
+    };
+    returnedProfileId = data.profileId;
+    processedEvents = Array.isArray(data.processedEvents)
+      ? data.processedEvents.length
+      : Number(data.processedEvents) || 0;
+  } catch {
+    // Some deployments return empty body on success
+  }
+
+  return { ok: true, status: res.status, profileId: returnedProfileId, processedEvents };
 }
 
 async function probeAdminApi(): Promise<{ ok: boolean; message: string }> {
@@ -207,7 +257,8 @@ async function probeHealthEndpoint(): Promise<{ ok: boolean; message: string }> 
     const unomi = data.find((item) => item.name === "unomi");
     if (unomi?.status === "LIVE") return { ok: true, message: "Unomi cluster LIVE" };
     return { ok: true, message: "Health endpoint reachable" };
-  } catch {
+  } catch (error) {
+    logError("unomi/health", "Health endpoint probe threw", { path: "/health/check" }, error);
     return { ok: false, message: "Health endpoint unreachable" };
   }
 }

@@ -7,6 +7,7 @@ import EmailFollowUp from "@/components/EmailFollowUp";
 import MessagingFollowUp from "@/components/MessagingFollowUp";
 import OnPageFollowUp from "@/components/OnPageFollowUp";
 import PhoneCallFollowUp from "@/components/PhoneCallFollowUp";
+import { getSessionId, withSessionQuery } from "@/lib/session-id";
 import type { ContactChannel, VisitorProfile } from "@/lib/types";
 
 type Props = { profileId: string };
@@ -37,7 +38,7 @@ export default function FollowUpHub({ profileId }: Props) {
   const [error, setError] = useState<string | null>(null);
 
   const loadProfile = useCallback(async () => {
-    const res = await fetch(`/api/profile?profileId=${encodeURIComponent(profileId)}`, {
+    const res = await fetch(withSessionQuery(`/api/profile?profileId=${encodeURIComponent(profileId)}`, getSessionId()), {
       cache: "no-store",
     });
     if (!res.ok) {
@@ -74,19 +75,19 @@ export default function FollowUpHub({ profileId }: Props) {
 
   switch (channel) {
     case "email":
-      return <EmailFollowUp profileId={profileId} profile={profile} />;
+      return <EmailFollowUp profileId={profileId} profile={profile} sessionId={profile.sessionId} />;
     case "browser_push":
-      return <BrowserPushFollowUp profileId={profileId} profile={profile} />;
+      return <BrowserPushFollowUp profileId={profileId} profile={profile} sessionId={profile.sessionId} />;
     case "on_page":
-      return <OnPageFollowUp profile={profile} />;
+      return <OnPageFollowUp profile={profile} sessionId={profile.sessionId} />;
     case "sms":
-      return <MessagingFollowUp profileId={profileId} variant="sms" />;
+      return <MessagingFollowUp profileId={profileId} sessionId={profile.sessionId} variant="sms" />;
     case "whatsapp":
-      return <MessagingFollowUp profileId={profileId} variant="whatsapp" />;
+      return <MessagingFollowUp profileId={profileId} sessionId={profile.sessionId} variant="whatsapp" />;
     case "line":
-      return <MessagingFollowUp profileId={profileId} variant="line" />;
+      return <MessagingFollowUp profileId={profileId} sessionId={profile.sessionId} variant="line" />;
     case "phone_call":
-      return <PhoneCallFollowUp profileId={profileId} profile={profile} />;
+      return <PhoneCallFollowUp profileId={profileId} profile={profile} sessionId={profile.sessionId} />;
     default: {
       const _exhaustive: never = channel;
       return _exhaustive;

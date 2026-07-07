@@ -1,6 +1,7 @@
 import { randomUUID } from "crypto";
 import { promises as fs } from "fs";
 import path from "path";
+import { getDataDir, isMemoryStore } from "./data-dir";
 import {
   estimateAiUsageCostUsd,
   getAiUsageCostRates,
@@ -10,8 +11,10 @@ import {
   type AiUsageTotals,
 } from "./ai-usage-types";
 import { getOpenAiModel, getOpenAiProviderLabel } from "./openai-config";
+import { isUnomiConfigured } from "./unomi-config";
+import { listAiUsageRecordsFromUnomi, syncAiUsageRecordToUnomi } from "./unomi-ai-usage-store";
 
-const DATA_DIR = path.join(process.cwd(), ".data");
+const DATA_DIR = getDataDir();
 const STORE_FILE = path.join(DATA_DIR, "ai-usage.json");
 
 export type { AiUsageFeature, AiUsageRecord, AiUsageSnapshot, AiUsageTotals } from "./ai-usage-types";
@@ -28,7 +31,25 @@ const EMPTY_TOTALS: AiUsageTotals = {
   requestCount: 0,
 };
 
+let memoryStore: AiUsageStore = { records: [] };
+
+function isUnomiAiUsageStoreEnabled(): boolean {
+  return isMemoryStore() && isUnomiConfigured();
+}
+
+async function loadRecords(): Promise<AiUsageRecord[]> {
+  if (isUnomiAiUsageStoreEnabled()) {
+    return listAiUsageRecordsFromUnomi();
+  }
+  const store = await readStore();
+  return store.records;
+}
+
 async function readStore(): Promise<AiUsageStore> {
+  if (isMemoryStore()) {
+    return memoryStore;
+  }
+
   await fs.mkdir(DATA_DIR, { recursive: true });
   try {
     return JSON.parse(await fs.readFile(STORE_FILE, "utf8")) as AiUsageStore;
@@ -38,6 +59,10 @@ async function readStore(): Promise<AiUsageStore> {
 }
 
 async function writeStore(store: AiUsageStore): Promise<void> {
+  if (isMemoryStore()) {
+    memoryStore = store;
+    return;
+  }
   await fs.writeFile(STORE_FILE, JSON.stringify(store, null, 2));
 }
 
@@ -92,16 +117,20 @@ export async function recordAiUsage(input: {
   store.records.unshift(record);
   store.records = store.records.slice(0, 500);
   await writeStore(store);
+
+  if (isUnomiAiUsageStoreEnabled()) {
+    await syncAiUsageRecordToUnomi(record);
+  }
 }
 
 export async function getAiUsageSnapshot(): Promise<AiUsageSnapshot> {
-  const store = await readStore();
+  const records = await loadRecords();
   const rates = getAiUsageCostRates();
   let totals = { ...EMPTY_TOTALS };
   let today = { ...EMPTY_TOTALS };
   const byFeature: AiUsageSnapshot["byFeature"] = {};
 
-  for (const record of store.records) {
+  for (const record of records) {
     totals = addTotals(totals, record);
     if (isToday(record.timestamp)) {
       today = addTotals(today, record);
@@ -114,7 +143,7 @@ export async function getAiUsageSnapshot(): Promise<AiUsageSnapshot> {
     totals,
     today,
     byFeature,
-    recentCalls: store.records.slice(0, 20),
+    recentCalls: records.slice(0, 20),
     estimatedCostUsd: estimateAiUsageCostUsd(totals.promptTokens, totals.completionTokens, rates),
     estimatedCostTodayUsd: estimateAiUsageCostUsd(today.promptTokens, today.completionTokens, rates),
     costRates: rates,

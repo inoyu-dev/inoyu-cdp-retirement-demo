@@ -1,6 +1,20 @@
-export const DEMO_SESSION_COOKIE = "itstoday_demo_session";
-export const DEMO_PASSWORD = process.env.DEMO_PASSWORD ?? "itsmedia";
-const DEMO_AUTH_SECRET = process.env.DEMO_AUTH_SECRET ?? "itstoday-demo-dev-secret";
+import {
+  DEMO_AUTH_SECRET_DEFAULT,
+  DEMO_PASSWORD_DEFAULT,
+  DEMO_SESSION_COOKIE,
+} from "./app-identity";
+
+export { DEMO_SESSION_COOKIE };
+
+const configuredPassword = process.env.DEMO_PASSWORD?.trim();
+export const DEMO_PASSWORD =
+  configuredPassword && configuredPassword.length > 0 ? configuredPassword : DEMO_PASSWORD_DEFAULT;
+
+const configuredSecret = process.env.DEMO_AUTH_SECRET?.trim();
+const DEMO_AUTH_SECRET =
+  configuredSecret && configuredSecret.length > 0
+    ? configuredSecret
+    : DEMO_AUTH_SECRET_DEFAULT;
 const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 
 export interface DemoSession {
@@ -94,9 +108,13 @@ export async function verifyDemoSessionToken(token: string | undefined): Promise
 }
 
 export function demoSessionCookieOptions(maxAgeSeconds: number) {
+  const secure =
+    process.env.DEMO_COOKIE_SECURE === "false"
+      ? false
+      : process.env.NODE_ENV === "production";
   return {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure,
     sameSite: "lax" as const,
     path: "/",
     maxAge: maxAgeSeconds,

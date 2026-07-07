@@ -15,7 +15,7 @@ const EN: QuizCopy = {
     title: "Are you on track to retire when you want?",
     subtitle:
       "Four quick steps. Choose how we follow up. No pressure — no sales call unless you ask for one.",
-    trust: ["About 2 minutes", "Plain language, no jargon", "Private and secure"],
+    trust: ["The quiz takes about two minutes to complete.", "We use plain language with no financial jargon.", "Your answers stay private and secure."],
   },
   card: {
     titleQuiz: "Get your free score",
@@ -210,10 +210,6 @@ const EN: QuizCopy = {
       "Many couples review their score together — that alone is a great next step.",
     ],
   },
-  stepCoach: {
-    personalizedLabel: "Personalized for you",
-    loading: "Personalizing this step…",
-  },
   stepHelp: {
     prompt: "Need help on this step?",
     aiButton: "Chat with AI guide",
@@ -249,7 +245,7 @@ const ES: QuizCopy = {
     title: "¿Va camino de jubilarse cuando quiere?",
     subtitle:
       "Cuatro pasos rápidos. Elija cómo le contactamos. Sin presión — ninguna llamada de ventas salvo que la pida.",
-    trust: ["Unos 2 minutos", "Lenguaje claro, sin tecnicismos", "Privado y seguro"],
+    trust: ["El cuestionario se completa en unos dos minutos.", "Usamos un lenguaje claro, sin tecnicismos financieros.", "Sus respuestas permanecen privadas y seguras."],
   },
   card: {
     titleQuiz: "Obtenga su puntuación gratis",
@@ -424,7 +420,7 @@ const ES: QuizCopy = {
     step2: [
       "Esperar hasta los 70 para cobrar la Seguridad Social puede aumentar el beneficio mensual hasta un 76% frente a los 62.",
       "Trasladar un 401(k) antiguo suele reducir comisiones — las pequeñas diferencias se acumulan.",
-      "Los costes de salud sorprenden a muchos antes de Medicare a los 65.",
+      "Los costes de salud son uno de los gastos que más sorprenden a muchas personas antes de Medicare a los 65 años.",
     ],
     step3: [
       "Usted elige cómo le contactamos — correo, SMS, apps o solo resultados en esta página.",
@@ -436,10 +432,6 @@ const ES: QuizCopy = {
       "Pequeños cambios en la edad de cobro o comisiones suelen mover la puntuación más de lo esperado.",
       "Muchas parejas revisan la puntuación juntas — ya es un gran paso.",
     ],
-  },
-  stepCoach: {
-    personalizedLabel: "Personalizado para usted",
-    loading: "Personalizando este paso…",
   },
   stepHelp: {
     prompt: "¿Necesita ayuda en este paso?",
@@ -476,7 +468,7 @@ const ZH: QuizCopy = {
     badge: "免费退休评分",
     title: "您能否按计划在理想时间退休？",
     subtitle: "四个简单步骤。选择跟进方式。无压力——除非您要求，否则不会有销售电话。",
-    trust: ["约 2 分钟", "通俗易懂，无术语", "私密且安全"],
+    trust: ["整个问卷大约只需两分钟。", "我们使用通俗易懂的语言，没有金融术语。", "您的回答会保持私密和安全。"],
   },
   card: {
     titleQuiz: "获取免费评分",
@@ -642,8 +634,8 @@ const ZH: QuizCopy = {
     ],
     step2: [
       "70 岁开始领社保，月福利可能比 62 岁高约 76%。",
-      " rollover 旧 401(k) 常可降低费用——小差异会复利累积。",
-      "65 岁 Medicare 前，医疗支出是许多人的意外大头。",
+      "将旧的 401(k) 账户转入新计划，往往可以降低费用——小差异也会随时间复利累积。",
+      "在 65 岁符合 Medicare 资格之前，医疗支出往往是许多人最大的意外开支之一。",
     ],
     step3: [
       "您可选择跟进方式——邮件、短信、应用或仅在本页查看结果。",
@@ -655,10 +647,6 @@ const ZH: QuizCopy = {
       "微调领取年龄或投资费用，往往比预期更能改变分数。",
       "许多夫妻会一起查看分数——这本身就是很好的下一步。",
     ],
-  },
-  stepCoach: {
-    personalizedLabel: "为您定制",
-    loading: "正在个性化本步骤…",
   },
   stepHelp: {
     prompt: "这一步需要帮助吗？",
@@ -694,7 +682,7 @@ const FR: QuizCopy = {
     title: "Partirez-vous à la retraite quand vous le souhaitez ?",
     subtitle:
       "Quatre étapes rapides. Choisissez comment nous vous recontactons. Sans pression — pas d'appel commercial sauf si vous le demandez.",
-    trust: ["Environ 2 minutes", "Langage clair, sans jargon", "Privé et sécurisé"],
+    trust: ["Le questionnaire se complète en environ deux minutes.", "Nous utilisons un langage clair, sans jargon financier.", "Vos réponses restent privées et sécurisées."],
   },
   card: {
     titleQuiz: "Obtenez votre score gratuit",
@@ -861,7 +849,7 @@ const FR: QuizCopy = {
     label: "Le saviez-vous ?",
     step1: [
       "Ceux qui ont un âge de retraite cible ajustent leurs épargnes plus tôt.",
-      "La tranche d'épargne estime les écarts — ce n'est pas un jugement.",
+      "La tranche d'épargne estime les écarts — ce n'est pas un jugement sur vos progrès.",
       "0,5 % de frais en moins sur un 401(k) peut coûter des milliers sur 20 ans.",
     ],
     step2: [
@@ -879,10 +867,6 @@ const FR: QuizCopy = {
       "De petits changements d'âge de retraite ou de frais déplacent souvent le score plus qu'on ne croit.",
       "Beaucoup de couples le consultent ensemble — c'est déjà une bonne étape.",
     ],
-  },
-  stepCoach: {
-    personalizedLabel: "Personnalisé pour vous",
-    loading: "Personnalisation de cette étape…",
   },
   stepHelp: {
     prompt: "Besoin d'aide à cette étape ?",
@@ -918,7 +902,7 @@ const JA: QuizCopy = {
     title: "希望する時期に退職できますか？",
     subtitle:
       "4つの簡単なステップ。フォロー方法を選べます。押し売りなし——ご希望がない限り営業電話はありません。",
-    trust: ["約2分", "わかりやすい言葉、専門用語なし", "プライベートで安全"],
+    trust: ["アンケートは約2分で完了します。", "金融の専門用語を使わない、わかりやすい言葉で書いています。", "ご回答は非公開で安全に扱われます。"],
   },
   card: {
     titleQuiz: "無料スコアを取得",
@@ -1080,11 +1064,11 @@ const JA: QuizCopy = {
     step1: [
       "退職目標年齢がある人は、早めに貯蓄を調整しやすい傾向があります。",
       "貯蓄レンジはギャップの目安であり、評価ではありません。",
-      "401(k)の手数料0.5%の差が20年で大きな差になることも。",
+      "401(k)の手数料が0.5%だけ違っても、20年後には大きな差になることがあります。",
     ],
     step2: [
       "70歳から社会保障を受け取ると、62歳開始より月額が最大76%高くなる場合があります。",
-      "旧401(k)のロールオーバーで手数料が下がることも — 小さな差が積み重なります。",
+      "旧401(k)を移管すると手数料が下がることが多く、小さな差も時間とともに積み重なります。",
       "65歳のMedicare前の医療費は、多くの人にとって大きな出費です。",
     ],
     step3: [
@@ -1095,12 +1079,8 @@ const JA: QuizCopy = {
     step4: [
       "スコアは会話のきっかけであり、最終判定ではありません。",
       "受給年齢や手数料の小さな変更が、思った以上にスコアを動かすことがあります。",
-      "ご夫婦で一緒に見る方も多く — それだけでも大きな一歩です。",
+      "ご夫婦で一緒に見る方も多く、それだけでも大きな一歩になります。",
     ],
-  },
-  stepCoach: {
-    personalizedLabel: "あなた向け",
-    loading: "このステップを調整中…",
   },
   stepHelp: {
     prompt: "このステップでお困りですか？",

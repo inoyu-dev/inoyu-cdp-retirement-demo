@@ -9,16 +9,16 @@ export default function DemoFlowGuide() {
       <CardHeader className="pb-3">
         <div className="flex items-center gap-2">
           <ListOrdered className="size-5 text-primary" aria-hidden />
-          <CardTitle className="text-lg">The five steps</CardTitle>
+          <CardTitle className="text-lg">The six steps</CardTitle>
         </div>
         <CardDescription>
-          Two-tab walkthrough for contest reviewers.
+          End-to-end walkthrough — works on desktop (two tabs) or mobile (menu navigation).
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <ol className="space-y-4">
+        <ol className="space-y-3 sm:space-y-4">
           {DEMO_FLOW_STEPS.map((step) => (
-            <li key={step.id} className="flex gap-3">
+            <li key={step.id} className="flex gap-3 rounded-xl border border-border/50 bg-muted/15 p-3 sm:border-transparent sm:bg-transparent sm:p-0">
               <Badge variant="outline" className="mt-0.5 size-7 shrink-0 justify-center rounded-full p-0">
                 {step.id}
               </Badge>

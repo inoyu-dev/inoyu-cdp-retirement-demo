@@ -10,12 +10,14 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { CONTACT_CHANNEL_LABELS } from "@/lib/contact-channels";
+import { withSessionQuery } from "@/lib/session-id";
 import type { ContactChannel, VisitorProfile } from "@/lib/types";
 
 type MessagingVariant = "sms" | "whatsapp" | "line";
 
 type Props = {
   profileId: string;
+  sessionId: string;
   variant: MessagingVariant;
 };
 
@@ -95,7 +97,7 @@ const VARIANT_CONFIG: Record<
   },
 };
 
-export default function MessagingFollowUp({ profileId, variant }: Props) {
+export default function MessagingFollowUp({ profileId, sessionId, variant }: Props) {
   const config = VARIANT_CONFIG[variant];
   const [profile, setProfile] = useState<VisitorProfile | null>(null);
   const [draft, setDraft] = useState("");
@@ -104,7 +106,7 @@ export default function MessagingFollowUp({ profileId, variant }: Props) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const loadProfile = useCallback(async () => {
-    const res = await fetch(`/api/profile?profileId=${encodeURIComponent(profileId)}`, {
+    const res = await fetch(withSessionQuery(`/api/profile?profileId=${encodeURIComponent(profileId)}`, sessionId), {
       cache: "no-store",
     });
     if (!res.ok) return null;
@@ -118,7 +120,7 @@ export default function MessagingFollowUp({ profileId, variant }: Props) {
       const startRes = await fetch("/api/sms", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "start", profileId }),
+        body: JSON.stringify({ action: "start", profileId, sessionId }),
       });
       if (startRes.ok) {
         const data = (await startRes.json()) as { profile: VisitorProfile };
@@ -131,7 +133,7 @@ export default function MessagingFollowUp({ profileId, variant }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [profileId, loadProfile]);
+  }, [profileId, sessionId, loadProfile]);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
@@ -147,7 +149,7 @@ export default function MessagingFollowUp({ profileId, variant }: Props) {
     const res = await fetch("/api/sms", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "reply", profileId, message: text }),
+      body: JSON.stringify({ action: "reply", profileId, sessionId, message: text }),
     });
 
     setSending(false);

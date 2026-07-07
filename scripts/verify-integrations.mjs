@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+import { resolveUnomiScope } from "./app-identity.mjs";
+
 /**
  * Verify OpenAI-compatible LLM + remote Unomi before a live demo.
  * Usage: cp .env.example .env.local  # fill values, then:
@@ -18,7 +20,7 @@ function resolveLlmBaseUrl() {
 }
 const openaiBase = resolveLlmBaseUrl();
 const openaiModel = process.env.OPENAI_MODEL || (infomaniakProductId ? "qwen3" : "gpt-4o-mini");
-const scope = process.env.UNOMI_SCOPE || "itstoday";
+const scope = resolveUnomiScope();
 const user = process.env.UNOMI_USERNAME || "karaf";
 const pass = process.env.UNOMI_PASSWORD || "karaf";
 
@@ -103,7 +105,7 @@ const llmOk = await checkLlm();
 const unomiOk = await checkUnomi();
 
 if (llmOk && unomiOk) {
-  console.log("\nReady for live showcase.");
+  console.log("\nReady for live demo.");
   process.exit(0);
 }
 console.log("\nFix the failures above or run in local-fallback mode.");

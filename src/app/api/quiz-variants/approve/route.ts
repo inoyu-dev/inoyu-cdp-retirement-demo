@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { apiErrorResponse } from "@/lib/api-errors";
 import { approveProposal } from "@/lib/quiz-variant-store";
 
 export async function POST(request: Request) {
@@ -12,7 +13,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Proposal not found or not pending" }, { status: 404 });
     }
     return NextResponse.json(result);
-  } catch {
-    return NextResponse.json({ error: "Failed to approve proposal" }, { status: 500 });
+  } catch (error) {
+    return apiErrorResponse("approve", "Failed to approve proposal", error);
   }
 }

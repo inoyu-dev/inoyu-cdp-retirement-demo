@@ -23,6 +23,7 @@ import {
   recordFieldFocus,
   type StepWillingnessSnapshot,
 } from "@/lib/step-willingness";
+import { getSessionId } from "@/lib/session-id";
 
 const IDLE_THRESHOLD_MS = 5000;
 const ACTIVITY_TICK_MS = 1000;
@@ -37,6 +38,7 @@ async function sendStepView(profileId: string, step: QuizStepId): Promise<void> 
     body: JSON.stringify({
       action: "track",
       profileId,
+      sessionId: getSessionId(),
       eventType: "quizStepView",
       properties: { step },
     }),
@@ -54,6 +56,7 @@ async function sendStepEngagement(
     body: JSON.stringify({
       action: "track",
       profileId,
+      sessionId: getSessionId(),
       eventType: "quizStepEngagement",
       properties: payload,
     }),

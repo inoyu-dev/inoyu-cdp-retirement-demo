@@ -100,7 +100,7 @@ export async function generateAgentReply(
   userMessage: string,
   options?: { useAi?: boolean },
 ): Promise<SmsReplyResult> {
-  const useAi = options?.useAi !== false && isOpenAiConfigured();
+  const useAi = options?.useAi === true && isOpenAiConfigured();
   if (!useAi) return safeTemplateReply(profile, userMessage);
 
   const quiz = profile.quiz;

@@ -2,9 +2,10 @@ import { randomUUID } from "crypto";
 import { promises as fs } from "fs";
 import path from "path";
 import type { DemoSession } from "./demo-auth";
+import { getDataDir, isMemoryStore } from "./data-dir";
 import { sendDemoEventToUnomi } from "./demo-unomi";
 
-const DATA_DIR = path.join(process.cwd(), ".data");
+const DATA_DIR = getDataDir();
 const STORE_FILE = path.join(DATA_DIR, "demo-analytics.json");
 
 export interface DemoUserAnalytics {
@@ -33,7 +34,13 @@ interface DemoAnalyticsStore {
   users: Record<string, DemoUserAnalytics>;
 }
 
+let memoryStore: DemoAnalyticsStore = { users: {} };
+
 async function readStore(): Promise<DemoAnalyticsStore> {
+  if (isMemoryStore()) {
+    return memoryStore;
+  }
+
   await fs.mkdir(DATA_DIR, { recursive: true });
   try {
     return JSON.parse(await fs.readFile(STORE_FILE, "utf8")) as DemoAnalyticsStore;
@@ -43,6 +50,10 @@ async function readStore(): Promise<DemoAnalyticsStore> {
 }
 
 async function writeStore(store: DemoAnalyticsStore): Promise<void> {
+  if (isMemoryStore()) {
+    memoryStore = store;
+    return;
+  }
   await fs.writeFile(STORE_FILE, JSON.stringify(store, null, 2));
 }
 

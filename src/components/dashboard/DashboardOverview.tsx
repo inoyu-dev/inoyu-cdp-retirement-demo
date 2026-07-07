@@ -13,6 +13,7 @@ import {
 import StatCard from "@/components/dashboard/StatCard";
 import MarketingOverviewCharts from "@/components/charts/MarketingOverviewCharts";
 import { useDashboardProfiles } from "@/hooks/useDashboardProfiles";
+import { getVisitorDisplayName } from "@/lib/profile-display";
 import { DASHBOARD_NAV } from "@/lib/dashboard-nav";
 
 export default function DashboardOverview() {
@@ -100,7 +101,7 @@ export default function DashboardOverview() {
                   href={`/dashboard/visitors?profileId=${encodeURIComponent(p.profileId)}`}
                   className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border/60 bg-card/50 px-4 py-3 transition-colors hover:border-primary/40 hover:bg-card/80"
                 >
-                  <span className="font-medium">{p.quiz?.firstName ?? "Anonymous"}</span>
+                  <span className="font-medium">{getVisitorDisplayName(p)}</span>
                   <span className="text-sm text-muted-foreground">
                     {p.trafficSource} · score {p.leadScore || "—"}
                     {p.quiz?.completedAt ? " · completed" : ""}

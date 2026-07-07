@@ -1,4 +1,7 @@
 import { NextResponse } from "next/server";
+import { apiErrorResponse } from "@/lib/api-errors";
+import { getDemoSessionFromRequest } from "@/lib/demo-request";
+import { sendDemoEventToUnomi } from "@/lib/demo-unomi";
 import {
   calculateLeadScore,
   calculateRetirementScore,
@@ -8,10 +11,12 @@ import { channelRequiresPhone } from "@/lib/contact-channels";
 import { isChannelAllowedForRegion, isVisitorRegion } from "@/lib/region";
 import type { ContactChannel, PrimaryConcern, QuizAnswers } from "@/lib/types";
 import { getProfile, trackEvent, updateProfile } from "@/lib/unomi-client";
+import { jsonWithVisitorContext, resolveVisitorContextIds } from "@/lib/visitor-context";
 
 type TrackBody = {
   action: "track";
   profileId: string;
+  sessionId?: string;
   eventType: string;
   properties?: Record<string, unknown>;
 };
@@ -19,6 +24,7 @@ type TrackBody = {
 type QuizBody = {
   action: "quiz";
   profileId: string;
+  sessionId?: string;
   answers: QuizAnswers;
 };
 
@@ -86,30 +92,47 @@ export async function POST(request: Request) {
   try {
     const body = (await request.json()) as TrackBody | QuizBody;
 
+    if (body.action !== "track" && body.action !== "quiz") {
+      return NextResponse.json({ error: "Unknown action" }, { status: 400 });
+    }
+
+    const ctx = await resolveVisitorContextIds({
+      profileId: body.profileId,
+      sessionId: body.sessionId,
+    });
+
     if (body.action === "track") {
-      if (!body.profileId || !body.eventType) {
-        return NextResponse.json({ error: "profileId and eventType required" }, { status: 400 });
+      if (!body.eventType) {
+        return NextResponse.json({ error: "eventType required" }, { status: 400 });
       }
-      const profile = await trackEvent(body.profileId, body.eventType, body.properties ?? {});
+      if (!ctx.profileId || !ctx.sessionId) {
+        return NextResponse.json({ error: "profileId and sessionId required" }, { status: 400 });
+      }
+      const profile = await trackEvent(
+        ctx.profileId,
+        body.eventType,
+        body.properties ?? {},
+        ctx.sessionId,
+      );
       if (!profile) {
         return NextResponse.json({ error: "Profile not found" }, { status: 404 });
       }
-      return NextResponse.json({ profile });
+      return jsonWithVisitorContext({ profile }, profile);
     }
 
     if (body.action === "quiz") {
       const answers = validateQuizAnswers(body.answers);
-      if (!answers || !body.profileId) {
+      if (!answers || !ctx.profileId || !ctx.sessionId) {
         return NextResponse.json({ error: "Invalid quiz submission" }, { status: 400 });
       }
 
-      const existing = await getProfile(body.profileId);
+      const existing = await getProfile(ctx.profileId, ctx.sessionId);
       if (!existing) {
         return NextResponse.json({ error: "Profile not found" }, { status: 404 });
       }
 
       const score = calculateRetirementScore(answers);
-      const latest = (await getProfile(body.profileId)) ?? existing;
+      const latest = (await getProfile(ctx.profileId, ctx.sessionId)) ?? existing;
       const engagement = latest.quizEngagement;
       const segments = deriveAllSegments(answers, score, engagement);
       const leadScore = calculateLeadScore(
@@ -119,41 +142,53 @@ export async function POST(request: Request) {
         engagement,
       );
 
-      const profile = await updateProfile(body.profileId, {
-        quiz: {
-          ...answers,
-          score,
-          completedAt: new Date().toISOString(),
+      const profile = await updateProfile(
+        ctx.profileId,
+        {
+          quiz: {
+            ...answers,
+            score,
+            completedAt: new Date().toISOString(),
+          },
+          contactRegion: answers.contactRegion,
+          segments,
+          leadScore,
         },
-        contactRegion: answers.contactRegion,
-        segments,
-        leadScore,
-      });
+        ctx.sessionId,
+      );
 
       if (engagement) {
-        await trackEvent(body.profileId, "quizEngagementSummary", {
+        await trackEvent(ctx.profileId, "quizEngagementSummary", {
           rollup: engagement,
           overallTechnicalComfort: engagement.overallTechnicalComfort,
           overallPointerComfort: engagement.overallPointerComfort,
           totalDurationSeconds: engagement.totalDurationSeconds,
           avgEngagementScore: engagement.avgEngagementScore,
-        });
+        }, ctx.sessionId);
       }
 
-      await trackEvent(body.profileId, "quizCompleted", {
+      await trackEvent(ctx.profileId, "quizCompleted", {
         score,
         segments,
         primaryConcern: answers.primaryConcern,
         contactChannel: answers.contactChannel,
         contactRegion: answers.contactRegion,
         quizEngagement: engagement,
-      });
+      }, ctx.sessionId);
 
-      return NextResponse.json({ profile, profileId: body.profileId });
+      const demoSession = await getDemoSessionFromRequest();
+      if (demoSession) {
+        void sendDemoEventToUnomi(demoSession, "demoQuizCompleted", {
+          visitorProfileId: ctx.profileId,
+          score,
+          contactChannel: answers.contactChannel,
+          segments,
+        });
+      }
+
+      return jsonWithVisitorContext({ profile, profileId: ctx.profileId }, profile);
     }
-
-    return NextResponse.json({ error: "Unknown action" }, { status: 400 });
-  } catch {
-    return NextResponse.json({ error: "Failed to process event" }, { status: 500 });
+  } catch (error) {
+    return apiErrorResponse("events", "Failed to process event", error);
   }
 }

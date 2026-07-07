@@ -1,6 +1,7 @@
 import { randomUUID } from "crypto";
 import { NextResponse } from "next/server";
-import { generateAiSummary } from "@/lib/ai-summary";
+import { apiErrorResponse } from "@/lib/api-errors";
+import { buildTemplateSummary, generateAiSummary } from "@/lib/ai-summary";
 import { createEvent } from "@/lib/local-store";
 import {
   buildInitialSms,
@@ -8,45 +9,48 @@ import {
   generateAgentReply,
 } from "@/lib/sms-agent";
 import type { SmsMessage, VisitorProfile } from "@/lib/types";
-import { getProfile, trackEvent, updateProfile } from "@/lib/unomi-client";
+import { smsChatMessageProperties } from "@/lib/chat-unomi-events";
+import { loadProfileWithSession, profileAccessErrorResponse } from "@/lib/profile-access";
+import { saveProfileSummary } from "@/lib/profile-ai-artifacts";
+import { getProfile, trackEvent, trackEvents, updateProfile } from "@/lib/unomi-client";
+import { jsonWithVisitorContext } from "@/lib/visitor-context";
 
-type StartBody = { action: "start"; profileId: string; force?: boolean };
+
+type StartBody = { action: "start"; profileId: string; sessionId?: string; force?: boolean };
 type ReplyBody = {
   action: "reply";
   profileId: string;
+  sessionId?: string;
   message: string;
   useAi?: boolean;
 };
-type ResetBody = { action: "reset"; profileId: string };
+type ResetBody = { action: "reset"; profileId: string; sessionId?: string };
 
 export async function POST(request: Request) {
   try {
     const body = (await request.json()) as StartBody | ReplyBody | ResetBody;
 
     if (body.action === "reset") {
-      const profile = await getProfile(body.profileId);
-      if (!profile) {
-        return NextResponse.json({ error: "Profile not found" }, { status: 404 });
-      }
-      const updated = await updateProfile(body.profileId, {
+      const loaded = await loadProfileWithSession(body.profileId, body.sessionId);
+      if (loaded.status !== "ok") return profileAccessErrorResponse(loaded);
+      const updated = await updateProfile(loaded.profileId, {
         smsThread: [],
         converted: false,
         conversionType: undefined,
-      });
-      return NextResponse.json({ profile: updated, reset: true });
+      }, loaded.sessionId);
+      return jsonWithVisitorContext({ profile: updated, reset: true }, updated);
     }
 
     if (body.action === "start") {
-      const profile = await getProfile(body.profileId);
-      if (!profile) {
-        return NextResponse.json({ error: "Profile not found" }, { status: 404 });
-      }
+      const loaded = await loadProfileWithSession(body.profileId, body.sessionId);
+      if (loaded.status !== "ok") return profileAccessErrorResponse(loaded);
+      const { profile, sessionId: sid } = loaded;
 
       if (profile.smsThread.length > 0 && !body.force) {
-        return NextResponse.json({ profile, started: true });
+        return jsonWithVisitorContext({ profile, started: true }, profile);
       }
 
-      const summary = await generateAiSummary(profile);
+      const summary = buildTemplateSummary(profile);
       const initial = buildInitialSms(summary);
       const smsThread: SmsMessage[] = [initial];
 
@@ -54,10 +58,19 @@ export async function POST(request: Request) {
         smsThread,
         converted: false,
         conversionType: undefined,
-      });
-      await trackEvent(body.profileId, "smsStarted", { messageId: initial.id });
+      }, sid);
+      await trackEvent(body.profileId, "smsStarted", {
+        messageId: initial.id,
+        channel: "sms",
+      }, sid);
+      await trackEvents(body.profileId, [
+        {
+          eventType: "smsChatMessage",
+          properties: smsChatMessageProperties(initial, { threadAction: "start" }),
+        },
+      ], sid);
 
-      return NextResponse.json({ profile: updated, summary });
+      return jsonWithVisitorContext({ profile: updated, summary }, updated);
     }
 
     if (body.action === "reply") {
@@ -66,10 +79,9 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: "message and profileId required" }, { status: 400 });
       }
 
-      const profile = await getProfile(body.profileId);
-      if (!profile) {
-        return NextResponse.json({ error: "Profile not found" }, { status: 404 });
-      }
+      const loaded = await loadProfileWithSession(body.profileId, body.sessionId);
+      if (loaded.status !== "ok") return profileAccessErrorResponse(loaded);
+      const { profile, sessionId: sid } = loaded;
 
       const leadMessage: SmsMessage = {
         id: randomUUID(),
@@ -78,7 +90,16 @@ export async function POST(request: Request) {
         timestamp: new Date().toISOString(),
       };
 
-      const summary = await generateAiSummary(profile);
+      let summary = buildTemplateSummary(profile);
+      if (body.useAi === true) {
+        const stored = profile.aiArtifacts?.summary;
+        if (stored?.source === "ai") {
+          summary = stored.data;
+        } else {
+          summary = await generateAiSummary(profile);
+          await saveProfileSummary(loaded.profileId, summary, "ai", sid);
+        }
+      }
       const replyResult = await generateAgentReply(profile, summary, text, {
         useAi: body.useAi,
       });
@@ -102,24 +123,39 @@ export async function POST(request: Request) {
         ];
       }
 
-      await updateProfile(body.profileId, patch);
+      await updateProfile(body.profileId, patch, sid);
+      await trackEvents(body.profileId, [
+        {
+          eventType: "smsChatMessage",
+          properties: smsChatMessageProperties(leadMessage),
+        },
+        {
+          eventType: "smsChatMessage",
+          properties: smsChatMessageProperties(agentMessage, {
+            replySource: replyResult.source,
+            safeguarded: replyResult.safeguarded,
+            useAi: body.useAi === true,
+          }),
+        },
+      ], sid);
       await trackEvent(body.profileId, "smsReply", {
         leadMessage: text,
         conversionType,
         replySource: replyResult.source,
         safeguarded: replyResult.safeguarded,
-      });
+        channel: "sms",
+      }, sid);
 
-      const finalProfile = await getProfile(body.profileId);
-      return NextResponse.json({
+      const finalProfile = await getProfile(body.profileId, sid);
+      return jsonWithVisitorContext({
         profile: finalProfile,
         agentMessage,
         replyMeta: replyResult,
-      });
+      }, finalProfile);
     }
 
     return NextResponse.json({ error: "Unknown action" }, { status: 400 });
-  } catch {
-    return NextResponse.json({ error: "SMS action failed" }, { status: 500 });
+  } catch (error) {
+    return apiErrorResponse("sms", "SMS action failed", error);
   }
 }

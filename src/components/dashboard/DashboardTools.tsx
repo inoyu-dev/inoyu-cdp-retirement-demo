@@ -46,10 +46,12 @@ function DashboardToolsInner() {
             <>
               <DashboardAgentChat
                 profileId={selected.profileId}
+                sessionId={selected.sessionId}
                 profileName={selected.quiz?.firstName ?? undefined}
               />
               <MarketerSmsSimulator
                 profileId={selected.profileId}
+                sessionId={selected.sessionId}
                 profileName={selected.quiz?.firstName ?? undefined}
               />
             </>

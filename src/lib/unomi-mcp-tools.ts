@@ -4,8 +4,9 @@
  * would expose the same tool names and payloads.
  */
 import { computeQuizFunnelAggregate } from "./quiz-funnel";
-import { listProfiles, getProfile } from "./local-store";
-import { isUnomiConfigured, SCOPE } from "./unomi-client";
+import { listProfiles } from "./local-store";
+import { isUnomiConfigured } from "./unomi-client";
+import { loadProfileForRead } from "./profile-access";
 import { unomiAdminFetch } from "./unomi-config";
 import type { VisitorProfile } from "./types";
 
@@ -32,13 +33,18 @@ export interface McpToolResult {
   error?: string;
 }
 
+function resolveUnomiProfileId(profile: VisitorProfile | null, profileId: string): string {
+  return profile?.unomiProfileId ?? profileId;
+}
+
 async function unomiFetch(path: string, init?: RequestInit): Promise<Response | null> {
   return unomiAdminFetch(path, init);
 }
 
 export async function unomiGetProfile(profileId: string): Promise<McpToolResult> {
-  const local = await getProfile(profileId);
-  const res = await unomiFetch(`/cxs/profiles/${encodeURIComponent(profileId)}`);
+  const local = await loadProfileForRead(profileId);
+  const remoteId = resolveUnomiProfileId(local, profileId);
+  const res = await unomiFetch(`/cxs/profiles/${encodeURIComponent(remoteId)}`);
   if (res?.ok) {
     const remote = await res.json();
     return {
@@ -57,7 +63,8 @@ export async function unomiSearchEvents(
   profileId: string,
   limit = 25,
 ): Promise<McpToolResult> {
-  const local = await getProfile(profileId);
+  const local = await loadProfileForRead(profileId);
+  const remoteId = resolveUnomiProfileId(local, profileId);
   const body = {
     offset: 0,
     limit,
@@ -67,7 +74,7 @@ export async function unomiSearchEvents(
       parameterValues: {
         propertyName: "profileId",
         comparisonOperator: "equals",
-        propertyValue: profileId,
+        propertyValue: remoteId,
       },
     },
   };
@@ -213,7 +220,7 @@ export async function unomiAggregate(params: {
       break;
     }
     case "event_types": {
-      const profile = params.profileId ? await getProfile(params.profileId) : null;
+      const profile = params.profileId ? await loadProfileForRead(params.profileId) : null;
       const counts: Record<string, number> = {};
       const events = profile?.events ?? profiles.flatMap((p) => p.events);
       for (const e of events) {
@@ -280,7 +287,7 @@ export async function unomiAggregate(params: {
 }
 
 export async function unomiGetVisitorTimeline(profileId: string): Promise<McpToolResult> {
-  const profile = await getProfile(profileId);
+  const profile = await loadProfileForRead(profileId);
   if (!profile) {
     return { ok: false, source: "local", data: null, error: "Profile not found" };
   }

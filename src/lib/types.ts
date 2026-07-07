@@ -72,12 +72,6 @@ export interface QuizChatMessage {
 }
 
 
-export interface StepPersonalization {
-  nudge: string;
-  tone: "encourage" | "reassure" | "celebrate";
-  willingness: "eager" | "steady" | "hesitant" | "stalled";
-}
-
 export interface QuizChatState {
   messages: QuizChatMessage[];
   humanRequested?: boolean;
@@ -177,8 +171,28 @@ export interface QuizExperimentStats {
   test: { visitors: number; completed: number; completionRate: number };
 }
 
+/** On-demand AI output cached on a visitor profile (no automatic LLM calls). */
+export interface ProfileAiArtifact<T> {
+  source: "ai" | "template";
+  generatedAt: string;
+  data: T;
+}
+
+export interface VisitorProfileAiArtifacts {
+  summary?: ProfileAiArtifact<AiSummary>;
+  /** Keyed by step-coach fingerprint (step + willingness + partial answers). */
+}
+
+export interface CachedFunnelAnalysis {
+  fingerprint: string;
+  generatedAt: string;
+  analysis: QuizFunnelAnalysis;
+}
+
 export interface VisitorProfile {
   profileId: string;
+  /** Profile id assigned by remote Apache Unomi (may differ from profileId). */
+  unomiProfileId?: string;
   sessionId: string;
   createdAt: string;
   updatedAt: string;
@@ -210,6 +224,8 @@ export interface VisitorProfile {
   quizFunnel?: QuizFunnelState;
   /** In-quiz AI / human chat thread. */
   quizChat?: QuizChatState;
+  /** Cached on-demand AI outputs for this visitor. */
+  aiArtifacts?: VisitorProfileAiArtifacts;
   segments: string[];
   leadScore: number;
   events: UnomiEvent[];
@@ -243,6 +259,8 @@ export interface AiSummary {
 
 export interface ContextResponse {
   profileId: string;
+  /** Profile id assigned by remote Apache Unomi (may differ from profileId). */
+  unomiProfileId?: string;
   sessionId: string;
   profile?: VisitorProfile;
   quizVariant?: QuizVariantConfig;

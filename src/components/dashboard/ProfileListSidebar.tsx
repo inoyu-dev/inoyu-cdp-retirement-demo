@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { CONTACT_CHANNEL_LABELS } from "@/lib/contact-channels";
+import { getVisitorDisplayName } from "@/lib/profile-display";
 import type { ContactChannel, VisitorProfile } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -63,7 +64,7 @@ export default function ProfileListSidebar({
                       )}
                     >
                       <span className="block font-medium">
-                        {p.quiz?.firstName ?? "Anonymous"}
+                        {getVisitorDisplayName(p)}
                       </span>
                       <span className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
                         <span>

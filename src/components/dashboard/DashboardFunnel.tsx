@@ -1,6 +1,7 @@
 "use client";
 
 import { Loader2, Sparkles, TrendingDown } from "lucide-react";
+import AiGenerateButton from "@/components/AiGenerateButton";
 import { Badge } from "@/components/ui/badge";
 import {
   Card,
@@ -14,7 +15,15 @@ import { useDashboardFunnel } from "@/hooks/useDashboardFunnel";
 import { cn } from "@/lib/utils";
 
 export default function DashboardFunnel() {
-  const { aggregate, analysis, loading } = useDashboardFunnel();
+  const {
+    aggregate,
+    analysis,
+    analysisSource,
+    aiAvailable,
+    loading,
+    generatingAi,
+    generateAiAnalysis,
+  } = useDashboardFunnel();
 
   return (
     <div className="space-y-8">
@@ -101,11 +110,22 @@ export default function DashboardFunnel() {
 
             <Card className="border-amber-500/30 bg-amber-500/5">
               <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <Sparkles className="size-4 text-amber-600" aria-hidden />
-                  AI friction analysis
-                </CardTitle>
-                <CardDescription>{analysis?.confidence ?? "low"} confidence</CardDescription>
+                <div className="flex flex-col gap-3">
+                  <div>
+                    <CardTitle className="flex items-center gap-2 text-base">
+                      <Sparkles className="size-4 text-amber-600" aria-hidden />
+                      AI friction analysis
+                    </CardTitle>
+                    <CardDescription>{analysis?.confidence ?? "low"} confidence</CardDescription>
+                  </div>
+                  <AiGenerateButton
+                    aiAvailable={aiAvailable}
+                    source={analysisSource}
+                    generating={generatingAi}
+                    onGenerate={() => void generateAiAnalysis()}
+                    label="Analyze friction with AI"
+                  />
+                </div>
               </CardHeader>
               <CardContent className="space-y-4 text-sm">
                 {analysis ? (

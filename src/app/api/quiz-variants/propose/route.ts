@@ -1,14 +1,18 @@
 import { NextResponse } from "next/server";
+import { apiErrorResponse } from "@/lib/api-errors";
 import { generateQuizVariantProposal } from "@/lib/ai-quiz-variant-proposal";
 import { buildTemplateAnalysis, generateAiFunnelAnalysis } from "@/lib/ai-funnel-analysis";
 import { computeQuizFunnelAggregate } from "@/lib/quiz-funnel";
-import { getQuizExperimentStore, savePendingProposal } from "@/lib/quiz-variant-store";
+import { savePendingProposal } from "@/lib/quiz-variant-store";
 import { isOpenAiConfigured } from "@/lib/openai-config";
 import { listProfiles } from "@/lib/unomi-client";
 
-export async function POST() {
+export async function POST(request: Request) {
   try {
-    const store = await getQuizExperimentStore();
+    const body = (await request.json().catch(() => ({}))) as { useAi?: boolean };
+    const wantAi = body.useAi === true && isOpenAiConfigured();
+
+    const store = await import("@/lib/quiz-variant-store").then((m) => m.getQuizExperimentStore());
     if (store.pendingProposal) {
       return NextResponse.json({
         proposal: store.pendingProposal,
@@ -23,18 +27,18 @@ export async function POST() {
     }
 
     let analysis = buildTemplateAnalysis(aggregate, profiles);
-    if (isOpenAiConfigured()) {
+    if (wantAi) {
       analysis = await generateAiFunnelAnalysis(aggregate, profiles);
     }
 
-    const proposal = await generateQuizVariantProposal(aggregate, analysis);
+    const proposal = await generateQuizVariantProposal(aggregate, analysis, { useAi: wantAi });
     if (!proposal) {
       return NextResponse.json({ error: "No actionable hotspot to optimize" }, { status: 400 });
     }
 
     await savePendingProposal(proposal);
-    return NextResponse.json({ proposal });
-  } catch {
-    return NextResponse.json({ error: "Failed to generate variant proposal" }, { status: 500 });
+    return NextResponse.json({ proposal, source: wantAi ? "ai" : "template" });
+  } catch (error) {
+    return apiErrorResponse("propose", "Failed to generate variant proposal", error);
   }
 }
