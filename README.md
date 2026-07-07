@@ -435,6 +435,6 @@ Funnel metrics per `utm_source` and `contactChannel`: views → engagement → q
 
 ## License
 
-[MIT License](LICENSE) — Copyright (c) 2026 Serge Huber.
+[MIT License](LICENSE) — Copyright (c) 2026 Inoyu.
 
 Demo code for educational and demonstration purposes only — **not** personalized financial advice.
