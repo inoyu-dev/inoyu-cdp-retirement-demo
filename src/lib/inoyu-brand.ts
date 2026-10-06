@@ -1,4 +1,4 @@
-/** Official Inoyu brand palette (matches inoyu-ui / inoyu.dev). */
+/** Official Inoyu brand palette (matches inoyu-pro-ui / inoyu.dev). */
 export const INOYU_BRAND = {
   navy: "#152a4c",
   blue: "#338cf5",
